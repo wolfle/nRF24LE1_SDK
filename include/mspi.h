@@ -92,6 +92,12 @@
 // Function prototypes
 ///////////////////////////////////////////
 void mspi_configure(uint16_t mspi_config_options);
+
+/* In order for the clock to run you must be writing, so if you want to read
+ * data you still need to do the mspi_read_write with a zero argument to avoid
+ * sending any meaningful data to the other side. This will drive the clock and
+ * let you read data back.
+ */
 uint8_t mspi_read_write(uint8_t mspi_data) __reentrant;
 
 #endif /*MSPI_H_*/
