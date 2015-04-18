@@ -1,18 +1,17 @@
-TARGETS := $(strip $(shell ls -d _target*))
-ifeq ($(TARGETS),)
-$(error There are no targets to clean/build)
-endif
-MAKE_PREFIX = make_
-CLEAN_PREFIX = clean_
-MAKE_TARGETS := $(foreach dir,$(TARGETS),$(MAKE_PREFIX)$(dir))
-CLEAN_TARGETS := $(foreach dir,$(TARGETS),$(CLEAN_PREFIX)$(dir))
+CFLAGS=-Iinclude --model-large --opt-code-size
+DFLAGS=-Iinclude -MM
+SDCC=sdcc
+SDCCLIB=sdcclib
+SED=sed
 
-all: $(MAKE_TARGETS)
+all: Makefile.gen libs
 
-$(MAKE_TARGETS):
-	$(MAKE) -C ./$(subst $(MAKE_PREFIX),,$@) all
+clean:
+	-rm -f _target*/obj/* _target*/dep/* _target*/lib/* Makefile.gen
 
-clean: $(CLEAN_TARGETS)
+Makefile.gen: configure.py
+	./configure.py
 
-$(CLEAN_TARGETS):
-	$(MAKE) -C ./$(subst $(CLEAN_PREFIX),,$@) clean
+.PHONY: all clean libs
+
+-include Makefile.gen
