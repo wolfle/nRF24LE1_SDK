@@ -21,7 +21,7 @@ class MakefileOut:
         self.f.write('%s: %s\n' % (target, src))
         self.f.write('\t$(SDCC) $(DFLAGS) -I%s/include $^ > $@.tmp\n' % name)
         self.f.write('\t$(SED) \'s,\\($*\)\\.o[ :]*,\\1.o $@ : ,g\' < $@.tmp > $@\n')
-        self.f.write('include %s' % target)
+        self.f.write('-include %s' % target)
         self.f.write('\n')
 
     def emit_rel(self, name, target, srcs):
