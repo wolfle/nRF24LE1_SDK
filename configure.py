@@ -37,27 +37,28 @@ def list_sources():
     files = glob.glob('src/*/src/*.c')
     return files
 
-def calc_target_obj_raw(target, src, dirname, suffix):
+def calc_target_obj_raw(target, lib, src, dirname, suffix):
+    src = lib + '_' + src
     tmp = src.replace('/', '_')
     tmp = tmp[:-2] + suffix
     return target + '/' + dirname + '/' + tmp
 
-def calc_target_obj(target, src):
-    return calc_target_obj_raw(target, src, 'obj', '.rel')
+def calc_target_obj(target, lib, src):
+    return calc_target_obj_raw(target, lib, src, 'obj', '.rel')
 
-def calc_target_objs(target, srcs):
-    return map(lambda s: (calc_target_obj(target, s), s), srcs)
+def calc_target_objs(target, lib, srcs):
+    return map(lambda s: (calc_target_obj(target, lib, s), s), srcs)
 
-def calc_target_dep(target, src):
-    return calc_target_obj_raw(target, src, 'dep', '.d')
+def calc_target_dep(target, lib, src):
+    return calc_target_obj_raw(target, lib, src, 'dep', '.d')
 
-def emit_target(make, target, srcs):
-    target_obj_pairs = calc_target_objs(target, srcs)
-    target_lib_name = target + '/lib/nrf24le1.lib'
+def emit_target(make, target, lib, srcs):
+    target_obj_pairs = calc_target_objs(target, lib, srcs)
+    target_lib_name = target + '/lib/' + lib + '.lib'
 
     make.emit_lib(target_lib_name, map(lambda pair: pair[0], target_obj_pairs))
     for pair in target_obj_pairs:
-        dep_name = calc_target_dep(target, pair[1])
+        dep_name = calc_target_dep(target, lib, pair[1])
         make.emit_rel_dep(target, dep_name, pair[1])
         make.emit_rel(target, pair[0], [pair[1], dep_name])
     return target_lib_name
@@ -65,11 +66,13 @@ def emit_target(make, target, srcs):
 def main():
     target_dirs = list_target_dirs()
     srcs = list_sources()
+    uart_poll_srcs = glob.glob('uart_poll/*.c')
 
     make = MakefileOut('Makefile.gen')
     libs = []
     for target in target_dirs:
-        libs.append(emit_target(make, target, srcs))
+        libs.append(emit_target(make, target, 'nrf24le1', srcs))
+        libs.append(emit_target(make, target, 'uart_poll', uart_poll_srcs))
 
     make.emit_dep('libs', libs)
 
