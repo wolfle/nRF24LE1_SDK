@@ -67,12 +67,14 @@ def main():
     target_dirs = list_target_dirs()
     srcs = list_sources()
     uart_poll_srcs = glob.glob('uart_poll/*.c')
+    uart_int_srcs = glob.glob('uart_int/*.c')
 
     make = MakefileOut('Makefile.gen')
     libs = []
     for target in target_dirs:
         libs.append(emit_target(make, target, 'nrf24le1', srcs))
         libs.append(emit_target(make, target, 'uart_poll', uart_poll_srcs))
+        libs.append(emit_target(make, target, 'uart_int', uart_int_srcs))
 
     make.emit_dep('libs', libs)
 
