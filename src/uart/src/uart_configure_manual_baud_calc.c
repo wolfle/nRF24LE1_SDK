@@ -89,7 +89,7 @@ void uart_configure_manual_baud_calc(uint8_t uart_config_options, uint16_t s0rel
 		}
 	}
 
-	//Set up SPIMCON0 register from mspi_config_options
+	//Set up S0CON register from uart_config_options
 	S0CON = uart_config_options & UART_CONFIG_OPTION_S0CON_MASK;
 
 	// Prepare interrupt flags
