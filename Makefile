@@ -1,6 +1,6 @@
 CFLAGS=-Iinclude --model-large --opt-code-size
 DFLAGS=-Iinclude -MM
-SDCC=sdcc
+SDCC=sdcc --std-c99
 SDCCLIB=sdcclib
 SED=sed
 

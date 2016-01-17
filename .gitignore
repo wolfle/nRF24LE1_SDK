@@ -8,9 +8,9 @@
 *.sym
 *.asm
 
-*/dep/
-*/lib/
-*/obj/
+*/dep/*
+*/lib/*
+*/obj/*
 
 # Generated makefile
 Makefile.gen
