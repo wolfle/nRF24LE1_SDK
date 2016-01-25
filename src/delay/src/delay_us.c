@@ -45,15 +45,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void delay_us(uint16_t microseconds)
 {
-	uint16_t count;
-
-	//Try to account for the call to and return from this function
-	if(microseconds == 0)
-		return;
-	else
-		microseconds -= 1;
-
-	for(count = 0; count < microseconds; count++)
+	while(--microseconds)
 	{
 		nop();
 		nop();

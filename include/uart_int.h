@@ -6,7 +6,7 @@
 /* This must be included from the file that has the main() function so the
  * interrupt function will be setup properly in the interrupt table.
  */
-interrupt_isr_uart() __using(1);
+irq_isr_uart() __using(1);
 
 /* Initialize the UART to 38400 8n1 and prepare the interrupt.
  * User must enable global interrupts before the UART can work. */

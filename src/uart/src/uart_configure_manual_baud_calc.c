@@ -93,6 +93,6 @@ void uart_configure_manual_baud_calc(uint8_t uart_config_options, uint16_t s0rel
 	S0CON = uart_config_options & UART_CONFIG_OPTION_S0CON_MASK;
 
 	// Prepare interrupt flags
-	interrupt_set_uart_tx();  // Pretend last character has been sent.
-	interrupt_clear_uart_rx();
+	irq_flag_set(irq_flag_uart_tx);  // Pretend last character has been sent.
+	irq_flag_clear(irq_flag_uart_rx);
 }

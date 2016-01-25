@@ -37,11 +37,11 @@ void uart_int_init(void)
 			GPIO_PIN_CONFIG_OPTION_PIN_MODE_OUTPUT_BUFFER_NORMAL_DRIVE_STRENGTH);
 
 	uart_configure_8_n_1_38400();
-	interrupt_control_uart_enable();
+	irq_uart_enable();
 	// The user needs to enable global interrupts for this to work
 }
 
-interrupt_isr_uart() __using(1)
+irq_isr_uart() __using(1)
 {
 	if (S0CON_SB_RI0) {
 		S0CON_SB_RI0 = 0;
@@ -67,14 +67,14 @@ void putchar(char c)
 {
 	while (xcnt >= XBUFLEN) /* wait for room in buffer */
 		;
-	interrupt_control_uart_disable();
+	irq_uart_disable();
 	if (busy) {
 		xbuf[(unsigned char)(xpos+xcnt++) % XBUFLEN] = c;
 	} else {
 		S0BUF = c;
 		busy = 1;
 	}
-	interrupt_control_uart_enable();
+	irq_uart_enable();
 }
 
 char getchar(void)
@@ -82,12 +82,12 @@ char getchar(void)
 	unsigned char c;
 	while (!rcnt)   /* wait for character */
 		;
-	interrupt_control_uart_disable();
+	irq_uart_disable();
 	rcnt--;
 	c = rbuf [rpos++];
 	if (rpos >= RBUFLEN)
 		rpos = 0;
-	interrupt_control_uart_enable();
+	irq_uart_enable();
 	return (c);
 }
 

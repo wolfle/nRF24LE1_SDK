@@ -47,7 +47,7 @@
 void watchdog_cause_software_reset()
 {
 	//Disable interrupts just in case there's an interrupt that might be restoring the watchdog
-	interrupt_control_global_disable();
+	cli();
 
 	watchdog_set_wdsv_count(2);
 	while(1);

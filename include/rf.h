@@ -31,10 +31,6 @@
 
 #include <stddef.h>
 #include "reg24le1.h"
-#include "interrupt.h"
-#include "delay.h"
-
-
 ////////////////////////////////////////////////////////////////////////////////////
 // SPI commands
 ////////////////////////////////////////////////////////////////////////////////////
@@ -179,39 +175,7 @@
 
 //SETUP_RETR register bitwise definitions
 #define RF_SETUP_RETR_ARD			0xF0
-#define RF_SETUP_RETR_ARD_4000			0xF0
-#define RF_SETUP_RETR_ARD_3750			0xE0
-#define RF_SETUP_RETR_ARD_3500			0xD0
-#define RF_SETUP_RETR_ARD_3250			0xC0
-#define RF_SETUP_RETR_ARD_3000			0xB0
-#define RF_SETUP_RETR_ARD_2750			0xA0
-#define RF_SETUP_RETR_ARD_2500			0x90
-#define RF_SETUP_RETR_ARD_2250			0x80
-#define RF_SETUP_RETR_ARD_2000			0x70
-#define RF_SETUP_RETR_ARD_1750			0x60
-#define RF_SETUP_RETR_ARD_1500			0x50
-#define RF_SETUP_RETR_ARD_1250			0x40
-#define RF_SETUP_RETR_ARD_1000			0x30
-#define RF_SETUP_RETR_ARD_750			0x20
-#define RF_SETUP_RETR_ARD_500			0x10
-#define RF_SETUP_RETR_ARD_250			0x00
 #define RF_SETUP_RETR_ARC			0x0F
-#define RF_SETUP_RETR_ARC_15			0x0F
-#define RF_SETUP_RETR_ARC_14			0x0E
-#define RF_SETUP_RETR_ARC_13			0x0D
-#define RF_SETUP_RETR_ARC_12			0x0C
-#define RF_SETUP_RETR_ARC_11			0x0B
-#define RF_SETUP_RETR_ARC_10			0x0A
-#define RF_SETUP_RETR_ARC_9			0x09
-#define RF_SETUP_RETR_ARC_8			0x08
-#define RF_SETUP_RETR_ARC_7			0x07
-#define RF_SETUP_RETR_ARC_6			0x06
-#define RF_SETUP_RETR_ARC_5			0x05
-#define RF_SETUP_RETR_ARC_4			0x04
-#define RF_SETUP_RETR_ARC_3			0x03
-#define RF_SETUP_RETR_ARC_2			0x02
-#define RF_SETUP_RETR_ARC_1			0x01
-#define RF_SETUP_RETR_ARC_0			0x00
 #define RF_SETUP_RETR_DISABLE			0x00
 
 //RF_CH register bitwise definitions
@@ -263,9 +227,6 @@
 //RX_PW_P0 register bitwise definitions
 #define RF_RX_PW_P0_RESERVED			0xC0
 
-//RX_PW_P0 register bitwise definitions
-#define RF_RX_PW_P0_RESERVED			0xC0
-
 //RX_PW_P1 register bitwise definitions
 #define RF_RX_PW_P1_RESERVED			0xC0
 
@@ -310,114 +271,128 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Function macros
+// macros
 ////////////////////////////////////////////////////////////////////////////////////
 #define rf_clear_ce()	sbit_clear(RFCON_SB_RFCE)	//Clears the CE pin
-#define rf_set_ce()		sbit_set(RFCON_SB_RFCE);\
-						delay_us(4)					//Sets the CE pin, waits 4 us until we can use SPI again
+#define rf_set_ce()		sbit_set(RFCON_SB_RFCE)
+#define rf_set_ce_d()	rf_set_ce(); delay_us(4)	//Sets the CE pin, waits 4 us until we can use SPI again
 #define rf_get_ce()		RFCON_SB_RFCE				//Gets the value of the CE pin
 #define rf_get_csn()	RFCON_SB_RFCSN				//Gets the value of the CSN pin
 #define rf_get_cken()	RFCON_SB_RFCKEN				//Gets the value of the CKEN pin
+#define rf_set_cken()	sbit_set(RFCON_SB_RFCKEN)
+#define rf_clear_cken()	sbit_clear(RFCON_SB_RFCKEN)
 
-#define rf_nop()				rf_spi_execute_command(RF_NOP, NULL, 0, true)			//nop command wrapper
-#define rf_flush_tx()			rf_spi_execute_command(RF_FLUSH_TX, NULL, 0, true)		//flush tx command wrapper
-#define rf_flush_rx()			rf_spi_execute_command(RF_FLUSH_RX, NULL, 0, true)		//flush rx command wrapper
-#define rf_reuse_tx_pl()		rf_spi_execute_command(RF_REUSE_TX_PL, NULL, 0, true)	//reuse tx payload command wrapper
+#define rf_nop()				rf_spi_cmd_zero(RF_NOP)			//nop command wrapper
+#define rf_flush_tx()			rf_spi_cmd_zero(RF_FLUSH_TX)		//flush tx command wrapper
+#define rf_flush_rx()			rf_spi_cmd_zero(RF_FLUSH_RX)		//flush rx command wrapper
+#define rf_reuse_tx_pl()		rf_spi_cmd_zero(RF_REUSE_TX_PL)	//reuse tx payload command wrapper
 #define rf_get_status()			rf_nop()												//get status register (wrapper of nop function)
 
-#define rf_irq_tx_ds_active()	((rf_get_status() & RF_STATUS_TX_DS)  ? true : false)	//true if a payload has been sent from the TX FIFO
-#define rf_irq_rx_dr_active()	((rf_get_status() & RF_STATUS_RX_DR)  ? true : false)	//true if the RX FIFO has received a payload
-#define rf_irq_max_rt_active()	((rf_get_status() & RF_STATUS_MAX_RT) ? true : false)	//true if the maximum amount of TX retries has been reached
-#define rf_irq_pin_active()		(IRCON_SB_RFIRQ)										//true if the IRQ pin from the 24L01 is active
+#define rf_irq_flag				(IRCON_SB_RFIRQ)									//true if the IRQ pin from the 24L01 is active
+#define rf_get_irq_flags()		(rf_get_status() & (RF_STATUS_RX_DR|RF_STATUS_TX_DSRF_STATUS_MAX_RT))
 
-#define rf_get_pipe_num_from_status_val(status_val)					((status_val) & RF_STATUS_RX_P_NO)												//return the pipe that is active in the STATUS register value...NOTE THAT THIS IS NOT SHIFTED DOWN BY ONE BIT
-#define rf_get_pipe_num_shifted_from_status_val(status_val)			(rf_get_pipe_num_from_status_val(status_val) >> 1)								//return the pipe that is active in the STATUS register value...NOTE THAT THIS IS SHIFTED DOWN BY ONE BIT TO GET INT VERSION
-#define rf_is_rxed_packet_on_pipe(status_val, pipe_val)				((rf_get_pipe_num_from_status_val(status_val) == (pipe_val)) ? true : false)	//true if the supplied pipe define is equal to the RX_P_NO field in STATUS register value
-#define rf_is_rx_fifo_empty_in_status_val(status_val)				rf_is_rxed_packet_on_pipe(status_val, RF_STATUS_RX_P_NO_RX_FIFO_EMPTY)			//true if the RX FIFO is empty in STATUS register value
-#define rf_is_rxed_payload_on_pipe_0_in_status_val(status_val)		rf_is_rxed_packet_on_pipe((status_val), RF_STATUS_RX_P_NO_0)					//true if the payload at the front of the RX FIFO is on pipe 0 in STATUS register value
-#define rf_is_rxed_payload_on_pipe_1_in_status_val(status_val)		rf_is_rxed_packet_on_pipe((status_val), RF_STATUS_RX_P_NO_1)					//true if the payload at the front of the RX FIFO is on pipe 1 in STATUS register value
-#define rf_is_rxed_payload_on_pipe_2_in_status_val(status_val)		rf_is_rxed_packet_on_pipe((status_val), RF_STATUS_RX_P_NO_2)					//true if the payload at the front of the RX FIFO is on pipe 2 in STATUS register value
-#define rf_is_rxed_payload_on_pipe_3_in_status_val(status_val)		rf_is_rxed_packet_on_pipe((status_val), RF_STATUS_RX_P_NO_3)					//true if the payload at the front of the RX FIFO is on pipe 3 in STATUS register value
-#define rf_is_rxed_payload_on_pipe_4_in_status_val(status_val)		rf_is_rxed_packet_on_pipe((status_val), RF_STATUS_RX_P_NO_4)					//true if the payload at the front of the RX FIFO is on pipe 4 in STATUS register value
-#define rf_is_rxed_payload_on_pipe_5_in_status_val(status_val)		rf_is_rxed_packet_on_pipe((status_val), RF_STATUS_RX_P_NO_5)					//true if the payload at the front of the RX FIFO is on pipe 5 in STATUS register value
-#define rf_is_tx_ds_active_in_status_val(status_val)				((status_val) & RF_STATUS_TX_DS)												//true if TX_DS bit is active in STATUS register value
-#define rf_is_rx_dr_active_in_status_val(status_val)				((status_val) & RF_STATUS_RX_DR)												//true if RX_DR bit is active in STATUS register value
-#define rf_is_max_rt_active_in_status_val(status_val)				((status_val) & RF_STATUS_MAX_RT)												//true if MAX_RT bit is active in STATUS register value
-#define rf_is_tx_fifo_full_in_status_val(status_val)				((status_val) & RF_STATUS_TX_FULL)												//true if TX_FULL bit is active in STATUS regiser value
+#define rf_get_pipe_num(status_val)					(((status_val) & RF_STATUS_RX_P_NO)>>1)											//return the pipe that is active in the STATUS register value
+#define rf_is_rxed_packet_on_pipe(status_val, pipe)	 ((rf_get_pipe_num(status_val) == (pipe_val)) ? true : false)				//true if the supplied pipe define is equal to the pipe number
+#define rf_is_rx_fifo_empty(status_val)				rf_is_rxed_packet_on_pipe(status_val, RF_FIFO_STATUS_RX_EMPTY)		//true if the RX FIFO is empty in STATUS register value
+#define rf_is_rx_fifo_full(status_val)				rf_is_rxed_packet_on_pipe(status_val, RF_FIFO_STATUS_RX_FULL)		//true if the RX FIFO is empty in STATUS register value
+#define rf_is_tx_ds_active(status_val)				((status_val) & RF_STATUS_TX_DS)												//true if TX_DS bit is active in STATUS register value
+#define rf_is_rx_dr_active(status_val)				((status_val) & RF_STATUS_RX_DR)												//true if RX_DR bit is active in STATUS register value
+#define rf_is_max_rt_active(status_val)				((status_val) & RF_STATUS_MAX_RT)												//true if MAX_RT bit is active in STATUS register value
+#define rf_is_tx_fifo_empty(status_val)				((status_val) & RF_FIFO_STATUS_TX_EMPTY)												//true if TX_FULL bit is active in STATUS regiser value
+#define rf_is_tx_fifo_full(status_val)				((status_val) & RF_FIFO_STATUS_TX_FULL)												//true if TX_FULL bit is active in STATUS regiser value
 
-#define rf_is_config_rx()			((rf_read_register_1_byte(RF_CONFIG) & RF_CONFIG_PRIM_RX) ? 1 : 0)
+#define rf_is_config_rx()			((rf_read_register_one(RF_CONFIG) & RF_CONFIG_PRIM_RX) ? 1 : 0)
 #define rf_is_config_tx()			(!rf_is_config_rx())
-#define rf_is_config_powered_up		((rf_read_register_1_byte(RF_CONFIG) & RF_CONFIG_PWR_UP) ? 1 : 0)
+#define rf_is_config_powered_up		((rf_read_register_one(RF_CONFIG) & RF_CONFIG_PWR_UP) ? 1 : 0)
 #define rf_is_config_powered_down	(!rf_is_config_powered_up())
 
-////////////////////////////////////////////////////////////////////////////////////
-// Function prototypes
-////////////////////////////////////////////////////////////////////////////////////
-void rf_configure(uint8_t config,
-				  bool opt_rx_active_mode,
-				  uint8_t en_aa,
-				  uint8_t en_rxaddr,
-				  uint8_t setup_aw,
-				  uint8_t setup_retr,
-				  uint8_t rf_ch,
-				  uint8_t rf_setup,
-				  uint8_t * rx_addr_p0,
-				  uint8_t * rx_addr_p1,
-				  uint8_t rx_addr_p2,
-				  uint8_t rx_addr_p3,
-				  uint8_t rx_addr_p4,
-				  uint8_t rx_addr_p5,
-				  uint8_t * tx_addr,
-				  uint8_t rx_pw_p0,
-				  uint8_t rx_pw_p1,
-				  uint8_t rx_pw_p2,
-				  uint8_t rx_pw_p3,
-				  uint8_t rx_pw_p4,
-				  uint8_t rx_pw_p5,
-				  uint8_t dynpd,
-				  uint8_t feature);
+#define CE_H rf_set_ce()
+#define CE_L rf_clear_ce()
+#define CE_H_D rf_set_ce_d()
+#define CE_P rf_tranmit_one()
 
-void rf_configure_debug(bool rx, uint8_t p0_payload_width, bool enable_auto_ack);
-void rf_configure_debug_lite(bool rx, uint8_t p0_payload_width);
+//The errata says you need to first write RFCON with 0x02, then you can enable the SPI pins
+#define rf_clock_enable() {	RFCON = 0x02; rf_set_cken(); }
 
-void rf_power_up(bool rx_active_mode);
-void rf_power_up_param(bool rx_active_mode, uint8_t config);
+#define rf_clock_disable()	rf_clear_cken()
+
+typedef enum {
+	dr2m=1, dr1m=0, dr250k=4
+} rf_date_rate_e;
+
+typedef enum {
+	n18dbm, n12dbm, n6dbm, n0dbm
+} rf_pa_e;
+
+typedef enum {
+	aw3=1, aw4, aw5
+} rf_address_width_e;
+
+typedef enum {
+	crc0, crc1, crc2
+} rf_crc_e;
+
+typedef enum {
+	txpayload=RF_W_TX_PAYLOAD,
+	noackpayload=RF_W_TX_PAYLOAD_NOACK,
+	ackpayload=RF_W_ACK_PAYLOAD
+} rf_payload_e;
+
+//config: 0x08 : ptx, 1bit crc, power down, enable all interrupts; 6 mask rx_dr, 5 mask tx_ds, 4 mask max_rt, 3 en_crc, 2 en_2b_crc, 1 pwr_up, 0 prim_rx
+//en_aa: 0x3f : enable auto ack for all pipes
+//en_rxaddr: 0x03 : enable pipe0 and pipe1
+//setup_aw: 0x03 : 5 bytes address width
+//setup_retr: 0x03 : 250us 3 times. 250us * (x>>4 + 1) for waiting, x&0xf for retransmitting times
+//rf_ch : 0x02 : 2--126 for 2m bps wide channel
+//setup : 0x0f :  2m bps and 0dbm (highest) pa power. 7th bit for wave_cont; 4th bit for force pll lock; 5th bit date_rate low; 3rd bit date_rate high; 2:1 for pa power level
+//status : 0x0e : 6 rx_dr, 5 tx_ds, 4 max_rt, 3:1 rx_p_n0 (111 for no rx data), 0 tx_full
+//observ_tx : 0x00 : 7:4 plos_cnt, 3:0 arc_cnt
+//rpd : 0x00 : 0 rpd, received power detector
+//fifo_status: 0x11 : 6 tx_reuse, 5 tx_full, 4 tx_empty, 1 rx_full, 0 rx_empty
+//dynpd : 0x00 : 5:0 enable dynamic payload length for 5:0 pipes
+//feature : 0x00 : 2 enable dynamic payload lenght, 1 enable payload with ack, 0 enable dynamic ack (Enables the W_TX_PAYLOAD_NOACK command)
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Functions
+////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t rf_spi_cmd_zero(uint8_t cmd);
+uint8_t rf_read_register_one(uint8_t reg);
+uint8_t rf_write_register_one(uint8_t reg, uint8_t val);
+
+//void rf_power_up_param(uint8_t config);
+//void rf_power_down_param(uint8_t config);
+void rf_power_up();
 void rf_power_down();
-void rf_power_down_param(uint8_t config);
+//void rf_set_data_rate_pa(rf_date_rate_e dr);
+//void rf_set_auto_rtr(uint8_t cnt, uint16_t udelay);
+//void rf_set_irq_mask_crc_rt(uint8_t mask, rf_crc_e crc, bool prx, bool powerup);// mask : 2:0 rx_dr|tx_ds|max_rt
+//void rf_set_address_width(rf_address_width_e aw);
+void rf_set_tx_address(const uint8_t * addr, uint8_t len); //also set address width by len
+void rf_set_rx_address(const uint8_t * addr, uint8_t len, uint8_t pipe);
+void rf_enable_shockburst(rf_date_rate_e dr, rf_pa_e pa, uint8_t retrans, bool prx, bool powerup);
 
-void rf_set_output_power(uint8_t);
-void rf_set_data_rate(uint8_t);
+uint8_t rf_read_rx_payload(uint8_t * buf, uint8_t len, uint8_t ** end); // if payload length > len, end will be NULL 
+uint8_t rf_write_payload(const uint8_t * buf, uint8_t len);
 
-uint8_t rf_write_register(uint8_t regnumber, uint8_t * dataptr, uint16_t len);
-uint8_t rf_read_register(uint8_t regnumber, uint8_t * dataptr, uint16_t len);
-uint8_t rf_read_register_1_byte(uint8_t regnumber);
+//void rf_set_rx_payload_width(uint8_t pipe, uint8_t pwidth);
+//void rf_set_as_rx();
+//void rf_set_as_tx();
+//void rf_transmit_one();
+uint8_t rf_write_noack_payload(const uint8_t * buf, uint8_t len);
+uint8_t rf_write_ack_payload(const uint8_t * buf, uint8_t len);
+//uint8_t rf_write_payload(rf_payload_e type, const uint8_t * buf, uint8_t len);
 
-void rf_set_tx_addr(uint8_t * address, uint16_t len);
-void rf_set_rx_addr(uint8_t * address, uint16_t len, uint8_t rxpipenum);
+inline void rf_set_channel(uint8_t channel){
+	rf_write_register_one(RF_RF_CH, channel);
+}
 
-void rf_set_as_rx(bool rx_active_mode);
-void rf_set_as_tx();
-
-uint8_t rf_read_rx_payload(uint8_t * dataptr, uint16_t len);
-uint8_t rf_write_tx_payload(uint8_t * dataptr, uint16_t len, bool transmit);
-uint8_t rf_write_tx_payload_noack(uint8_t * dataptr, uint16_t len, bool transmit);
-
-uint8_t rf_read_rx_payload_width(uint8_t * dataptr);
-uint8_t rf_write_tx_ack_payload(uint8_t * dataptr, uint16_t len);
-
-void rf_transmit();
-void rf_get_all_registers(uint8_t * dataptr);
-void rf_spi_configure_enable();
-void rf_irq_clear_all();
-void rf_irq_clear(uint8_t irq_mask);
-bool rf_is_rpd_active();
-void rf_set_rf_channel(uint8_t channel);
-
-bool rf_tx_fifo_is_full();
-bool rf_tx_fifo_is_empty();
-bool rf_rx_fifo_is_full();
-bool rf_rx_fifo_is_empty();
-
-uint8_t rf_spi_execute_command(uint8_t instruction, uint8_t * dataptr, uint16_t len, bool copydata);
-
+inline uint8_t rf_observe_tx(){
+	return rf_read_register_one(RF_OBSERVE_TX);
+}
+inline bool rf_rpd_active() {
+	return ((rf_read_register_one(RF_RPD) & RF_RPD_RPD) ? true : false);
+}
 #endif /*RF_H_*/

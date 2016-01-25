@@ -46,10 +46,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void uart_send_wait_for_complete(uint8_t tx_data)
 {
-	interrupt_clear_uart_tx();
+//	irq_clear_flag(irq_flag_uart_tx);
 
         uart_send(tx_data);
 
-	interrupt_wait_for_uart_tx();
+	irq_wait_flag(irq_flag_uart_tx);
 
 }

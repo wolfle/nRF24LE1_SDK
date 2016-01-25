@@ -14,7 +14,7 @@ class MakefileOut:
 
     def emit_lib(self, target, srcs):
         self.f.write('%s: %s\n' % (target, ' '.join(srcs)))
-        self.f.write('\t$(SDCCLIB) a $@ $^\n')
+        self.f.write('\t$(SDAR) -rc $@ $^\n')
         self.f.write('\n')
 
     def emit_rel_dep(self, name, target, src):

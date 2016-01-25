@@ -85,5 +85,6 @@ void w2_configure(uint16_t w2_config_options, uint8_t address_in_slave_mode)
 	// if a byte has been sent/received.  Polling W2CON1.0 is unreliable for checking this condition, so IRCON.2
 	// must be polled until it is set, then W2CON1.0 can be read to see if the interrupt was caused by an RX/TX
 	// byte event.
-	interrupt_unmask_2wire_completed();
+	irq_wait_flag(irq_flag_spi_2wire);
+	irq_unmask_2wire();
 }

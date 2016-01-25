@@ -93,8 +93,7 @@ typedef enum
 #define w2_send_stop_condition()		W2CON0 |= W2CON0_MASTER_TX_STOP																	//Transmit a stop condition in RX after current byte is received, or in TX after any pending TX data is transmitted
 #define w2_send_byte(tx_byte)			W2DAT = (tx_byte)																				//Send a byte over the bus
 #define w2_get_rxed_byte()				(W2DAT)																							//Read the last byte received over the bus
-#define w2_wait_for_irq()				interrupt_wait_for_spi_2wire();\
-										interrupt_clear_spi_2wire()																		//Wait for and clear the W2 interrupt
+#define w2_wait_for_irq()				irq_wait_flag(irq_flag_spi_2wire)																		//Wait for and clear the W2 interrupt
 #define w2_master_set_clock_idle()		W2CON0 = ((W2CON0 & (~W2CON0_CLOCK_FREQUENCY_MASK)) | (0x00 << W2CON0_CLOCK_FREQUENCY_SHIFT))	//Set W2 clock to idle
 #define w2_master_set_clock_100_khz()	W2CON0 = ((W2CON0 & (~W2CON0_CLOCK_FREQUENCY_MASK)) | (0x01 << W2CON0_CLOCK_FREQUENCY_SHIFT))	//Set W2 clock to 100 kHz
 #define w2_master_set_clock_400_khz()	W2CON0 = ((W2CON0 & (~W2CON0_CLOCK_FREQUENCY_MASK)) | (0x02 << W2CON0_CLOCK_FREQUENCY_SHIFT))	//Set W2 clock to 400 kHz

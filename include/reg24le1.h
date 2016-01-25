@@ -30,6 +30,7 @@
 #define REG24LE1_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "target_nrf24le1_sdk.h"
 
 
@@ -717,18 +718,6 @@ __sbit __at 0xFF FSR_SB_ENDBG;
 #define BIT_TRUE			1							//Simple define for 1
 #define BIT_FALSE			0							//Simple define for 0
 
-///////////////////////////////////////////
-// define for bool type
-///////////////////////////////////////////
-#ifndef bool
-#define bool uint8_t
-#endif
-#ifndef false
-#define false 0
-#endif
-#ifndef true
-#define true (!false)
-#endif
 
 ////////////////////////////////////////////////
 // Defenitions for nRF24LE1 packages
@@ -781,8 +770,11 @@ __sbit __at 0xFF FSR_SB_ENDBG;
 ///////////////////////////////////////////////////////////////////////////////
 // Macros for changing SBITs
 ///////////////////////////////////////////////////////////////////////////////
-#define sbit_set(sbit_pin_set)					__asm setb _##sbit_pin_set __endasm			//Set an SBIT
-#define sbit_clear(sbit_pin_clear)				__asm clr  _##sbit_pin_clear __endasm		//Clear an SBIT
-#define sbit_complement(sbit_pin_complement)	__asm cpl  _##sbit_pin_complement __endasm	//Complement an SBIT
+#define __sbit_set(sbit_pin_set)					__asm setb _##sbit_pin_set __endasm			//Set an SBIT
+#define __sbit_clear(sbit_pin_clear)				__asm clr  _##sbit_pin_clear __endasm		//Clear an SBIT
+#define __sbit_complement(sbit_pin_complement)	__asm cpl  _##sbit_pin_complement __endasm	//Complement an SBIT
 
+#define sbit_set(sbit_pin_set) 						__sbit_set(sbit_pin_set)
+#define sbit_clear(sbit_pin_clear) 					__sbit_clear(sbit_pin_clear) 
+#define sbit_complement(sbit_pin_complement) 		__sbit_complement(sbit_pin_complement)
 #endif

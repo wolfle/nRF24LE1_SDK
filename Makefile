@@ -1,7 +1,7 @@
-CFLAGS=-Iinclude --model-large --opt-code-size
+CFLAGS=-Iinclude 
 DFLAGS=-Iinclude -MM
-SDCC=sdcc --std-c99
-SDCCLIB=sdcclib
+SDCC=sdcc
+SDAR=sdar
 SED=sed
 
 all: Makefile.gen libs

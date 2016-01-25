@@ -121,9 +121,9 @@
 // Function macros for various hardware tasks
 //////////////////////////////////////////////
 #define uart_send(tx_data)						(S0BUF = tx_data)			//Send tx_data over the UART
-#define uart_tx_data_sent()						(S0CON_SB_TI0)				//Returns true if the UART has transmitted data, false otherwise
+#define uart_tx_data_sent()						irq_flag_uart_tx				//Returns true if the UART has transmitted data, false otherwise
 #define uart_get()								(S0BUF)						//Get the last character recieved over the UART
-#define uart_rx_data_ready()					(S0CON_SB_RI0)				//Returns true if the UART has received data, false otherwise
+#define uart_rx_data_ready()					irq_flag_uart_rx				//Returns true if the UART has received data, false otherwise
 #define uart_rx_enable()						sbit_set(S0CON_SB_REN0)		//Enable the UART receiver
 #define uart_rx_disable()						sbit_clear(S0CON_SB_REN0)	//Disable the UART receiver
 #define uart_set_tx_bit_8()						sbit_set(S0CON_SB_TB80)		//Sets the ninth bit when using 9-bit communication
