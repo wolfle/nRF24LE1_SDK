@@ -380,7 +380,7 @@ uint8_t rf_write_payload(const uint8_t * buf, uint8_t len);
 //void rf_set_rx_payload_width(uint8_t pipe, uint8_t pwidth);
 //void rf_set_as_rx();
 //void rf_set_as_tx();
-//void rf_transmit_one();
+void rf_transmit_one();
 uint8_t rf_write_noack_payload(const uint8_t * buf, uint8_t len);
 uint8_t rf_write_ack_payload(const uint8_t * buf, uint8_t len);
 //uint8_t rf_write_payload(rf_payload_e type, const uint8_t * buf, uint8_t len);
