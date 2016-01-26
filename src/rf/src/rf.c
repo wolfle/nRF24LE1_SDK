@@ -116,12 +116,16 @@ void rf_power_down(){
 static void rf_set_address_width(rf_address_width_e aw){//FIXME: sizeof (enum)
 	rf_write_register_one(RF_SETUP_AW, (uint8_t)aw);
 }
-void rf_set_tx_address(const uint8_t * addr, uint8_t len){
-	rf_write_register(RF_TX_ADDR, addr, len);
+void rf_set_tx_address(const uint8_t * addr, uint8_t len){ //always set tx addr == rx pipe0 addr
 	rf_set_address_width(len-2); //set address width according to len
+	rf_write_register(RF_TX_ADDR, addr, len);
+	rf_write_register(RF_RX_ADDR_P0, addr, len);
+	rf_write_register_one(RF_EN_RXADDR, RF_EN_RXADDR_ERX_P0); //only enable pipe0 in ptx mode
 }
-void rf_set_rx_address(const uint8_t * addr, uint8_t len, uint8_t pipe){
+void rf_set_rx_address(const uint8_t * addr, uint8_t len, uint8_t pipe){//always set tx addr == rx pipe0 addr
 	rf_write_register(RF_RX_ADDR_P0 + pipe, addr, len);
+	if(pipe==0)	rf_set_address_width(len-2); //set address width according to len
+	rf_write_register_one(RF_EN_RXADDR,rf_read_register_one(RF_EN_RXADDR)| (1<<pipe));
 }
 static void rf_set_auto_rtr(uint8_t cnt, uint16_t udelay){
 	cnt &= 0xf;
@@ -193,7 +197,7 @@ void rf_transmit_one(){
 uint8_t rf_write_noack_payload(const uint8_t * buf, uint8_t len){
 	return rf_spi_write(RF_W_TX_PAYLOAD_NOACK, buf, len);
 }
-uint8_t rf_write_ack_payload(const uint8_t * buf, uint8_t len){
-	return rf_spi_write(RF_W_ACK_PAYLOAD, buf, len);
+uint8_t rf_write_ack_payload(uint8_t pipe, const uint8_t * buf, uint8_t len){
+	return rf_spi_write(RF_W_ACK_PAYLOAD|(pipe&0x7), buf, len);
 }
 

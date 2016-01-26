@@ -43,7 +43,7 @@
 #define RF_FLUSH_RX				0xE2	//Flush RX FIFO command
 #define RF_REUSE_TX_PL			0xE3	//Reuse last TX payload command
 #define RF_R_RX_PL_WID			0x60	//Read RX payload width command
-#define RF_W_ACK_PAYLOAD		0xA1	//Write acknowledge payload command
+#define RF_W_ACK_PAYLOAD		0xA8	//Write acknowledge payload command
 #define RF_W_TX_PAYLOAD_NOACK	0xB0	//Read RX payload width command
 #define RF_NOP					0xFF	//No operation command
 
@@ -370,8 +370,11 @@ void rf_power_down();
 //void rf_set_auto_rtr(uint8_t cnt, uint16_t udelay);
 //void rf_set_irq_mask_crc_rt(uint8_t mask, rf_crc_e crc, bool prx, bool powerup);// mask : 2:0 rx_dr|tx_ds|max_rt
 //void rf_set_address_width(rf_address_width_e aw);
+
+//set address for ptx mode
 void rf_set_tx_address(const uint8_t * addr, uint8_t len); //also set address width by len
-void rf_set_rx_address(const uint8_t * addr, uint8_t len, uint8_t pipe);
+//set address for prx mode
+void rf_set_rx_address(const uint8_t * addr, uint8_t len, uint8_t pipe); //also set addr width if pipe==0
 void rf_enable_shockburst(rf_date_rate_e dr, rf_pa_e pa, uint8_t retrans, bool prx, bool powerup);
 
 uint8_t rf_read_rx_payload(uint8_t * buf, uint8_t len, uint8_t ** end); // if payload length > len, end will be NULL 
@@ -382,7 +385,7 @@ uint8_t rf_write_payload(const uint8_t * buf, uint8_t len);
 //void rf_set_as_tx();
 void rf_transmit_one();
 uint8_t rf_write_noack_payload(const uint8_t * buf, uint8_t len);
-uint8_t rf_write_ack_payload(const uint8_t * buf, uint8_t len);
+uint8_t rf_write_ack_payload(uint8_t pipe, const uint8_t * buf, uint8_t len);
 //uint8_t rf_write_payload(rf_payload_e type, const uint8_t * buf, uint8_t len);
 
 inline void rf_set_channel(uint8_t channel){
