@@ -161,11 +161,6 @@ void rf_enable_shockburst(rf_date_rate_e dr, rf_pa_e pa, uint8_t retrans, bool p
 uint8_t rf_write_payload(const uint8_t * buf, uint8_t len){
 	return rf_spi_write(RF_W_TX_PAYLOAD, buf, len);
 }
-/*
-uint8_t rf_write_payload(rf_payload_e type, const uint8_t * buf, uint8_t len){
-	return rf_spi_write(type, buf, len);
-}
-*/
 static uint8_t rf_read_rx_payload_width(){
 	return rf_spi_read_one(RF_R_RX_PL_WID);
 }
@@ -187,12 +182,12 @@ void rf_set_as_tx(){
 void rf_set_rx_payload_width(uint8_t pipe, uint8_t pwidth){ //only if not using dynamic payload length, ptx must write the same length to tx fifo
 	rf_write_register_one(RF_RX_PW_P0 + pipe, pwidth);
 }
-*/
 void rf_transmit_one(){
 	rf_set_ce();
 	delay_us(10);
 	rf_clear_ce();
 }
+*/
 
 uint8_t rf_write_noack_payload(const uint8_t * buf, uint8_t len){
 	return rf_spi_write(RF_W_TX_PAYLOAD_NOACK, buf, len);

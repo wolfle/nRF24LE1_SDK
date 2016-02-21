@@ -332,12 +332,6 @@ typedef enum {
 	crc0, crc1, crc2
 } rf_crc_e;
 
-typedef enum {
-	txpayload=RF_W_TX_PAYLOAD,
-	noackpayload=RF_W_TX_PAYLOAD_NOACK,
-	ackpayload=RF_W_ACK_PAYLOAD
-} rf_payload_e;
-
 //config: 0x08 : ptx, 1bit crc, power down, enable all interrupts; 6 mask rx_dr, 5 mask tx_ds, 4 mask max_rt, 3 en_crc, 2 en_2b_crc, 1 pwr_up, 0 prim_rx
 //en_aa: 0x3f : enable auto ack for all pipes
 //en_rxaddr: 0x03 : enable pipe0 and pipe1
@@ -377,13 +371,13 @@ void rf_set_tx_address(const uint8_t * addr, uint8_t len); //also set address wi
 void rf_set_rx_address(const uint8_t * addr, uint8_t len, uint8_t pipe); //also set addr width if pipe==0
 void rf_enable_shockburst(rf_date_rate_e dr, rf_pa_e pa, uint8_t retrans, bool prx, bool powerup);
 
-uint8_t rf_read_rx_payload(uint8_t * buf, uint8_t len, uint8_t ** end); // if payload length > len, end will be NULL 
+uint8_t rf_read_rx_payload(uint8_t * buf, uint8_t len, uint8_t ** end); // if payload length > len, end will be NULL; return reg STATUS, the pipe of the payload can be determined from it  
 uint8_t rf_write_payload(const uint8_t * buf, uint8_t len);
 
 //void rf_set_rx_payload_width(uint8_t pipe, uint8_t pwidth);
 //void rf_set_as_rx();
 //void rf_set_as_tx();
-void rf_transmit_one();
+//void rf_transmit_one();
 uint8_t rf_write_noack_payload(const uint8_t * buf, uint8_t len);
 uint8_t rf_write_ack_payload(uint8_t pipe, const uint8_t * buf, uint8_t len);
 //uint8_t rf_write_payload(rf_payload_e type, const uint8_t * buf, uint8_t len);
