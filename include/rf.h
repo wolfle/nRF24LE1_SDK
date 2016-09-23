@@ -26,8 +26,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 /////////////////////////////////////////////////////////////////////////////
 
-#ifndef RF_H_
-#define RF_H_
+#ifndef _RF_H_
+#define _RF_H_
 
 #include <stddef.h>
 #include "reg24le1.h"

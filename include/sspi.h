@@ -35,26 +35,26 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Configuration defines for use with sspi_configure() function...OR these together to form the sspi_config_options argument
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define SSPI_CONFIG_OPTION_ENABLE								(SPISCON0_ENABLE)						//Enables SSPI communication
-#define SSPI_CONFIG_OPTION_DISABLE								(0)										//Disables SSPI communication
+#define SSPI_ENABLE								(SPISCON0_ENABLE)						//Enables SSPI communication
+#define SSPI_DISABLE								(0)										//Disables SSPI communication
 
-#define SSPI_CONFIG_OPTION_CPHA_SAMPLE_ON_MSCK_EDGE_TRAILING	(SPISCON0_CPHA)							//Configures SSPI to sample on trailing edge of MSCK, and shift on leading edge
-#define SSPI_CONFIG_OPTION_CPHA_SAMPLE_ON_MSCK_EDGE_LEADING		(0)										//Configures SSPI to sample on leading edge of MSCK, and shift on trailing edge
+#define SSPI_CPHA_SAMPLE_ON_MSCK_EDGE_TRAILING	(SPISCON0_CPHA)							//Configures SSPI to sample on trailing edge of MSCK, and shift on leading edge
+#define SSPI_CPHA_SAMPLE_ON_MSCK_EDGE_LEADING		(0)										//Configures SSPI to sample on leading edge of MSCK, and shift on trailing edge
 
-#define SSPI_CONFIG_OPTION_CPOL_MSCK_ACTIVE_LOW					(SPISCON0_CPOL)							//Configures the clock polarity to be active low
-#define SSPI_CONFIG_OPTION_CPOL_MSCK_ACTIVE_HIGH				(0)										//Configures the clock polarity to be active high
+#define SSPI_CPOL_MSCK_ACTIVE_LOW					(SPISCON0_CPOL)							//Configures the clock polarity to be active low
+#define SSPI_CPOL_MSCK_ACTIVE_HIGH				(0)										//Configures the clock polarity to be active high
 
-#define SSPI_CONFIG_OPTION_DATA_ORDER_LSB_FIRST					(SPISCON0_DATA_ORDER)					//Send data with LSb first
-#define SSPI_CONFIG_OPTION_DATA_ORDER_MSB_FIRST					(0)										//Send data with MSb first
+#define SSPI_DATA_ORDER_LSB_FIRST					(SPISCON0_DATA_ORDER)					//Send data with LSb first
+#define SSPI_DATA_ORDER_MSB_FIRST					(0)										//Send data with MSb first
 
-#define SSPI_CONFIG_OPTION_SPI_SLAVE_DONE_INT_ENABLE			(0)										//Enable SPI slave done interrupt
-#define SSPI_CONFIG_OPTION_SPI_SLAVE_DONE_INT_DISABLE			(SPISCON0_INT_SPI_SLAVE_DONE_DISABLE)	//Disable SPI slave done interrupt
+#define SSPI_SPI_SLAVE_DONE_INT_ENABLE			(0)										//Enable SPI slave done interrupt
+#define SSPI_SPI_SLAVE_DONE_INT_DISABLE			(SPISCON0_INT_SPI_SLAVE_DONE_DISABLE)	//Disable SPI slave done interrupt
 
-#define SSPI_CONFIG_OPTION_CSN_LOW_INT_ENABLE					(0)										//Enable CSN low interrupt
-#define SSPI_CONFIG_OPTION_CSN_LOW_INT_DISABLE					(SPISCON0_INT_CSN_LOW_DISABLE)			//Disable CSN low interrupt
+#define SSPI_CSN_LOW_INT_ENABLE					(0)										//Enable CSN low interrupt
+#define SSPI_CSN_LOW_INT_DISABLE					(SPISCON0_INT_CSN_LOW_DISABLE)			//Disable CSN low interrupt
 
-#define SSPI_CONFIG_OPTION_CSN_HIGH_INT_ENABLE					(0)										//Enable CSN high interrupt
-#define SSPI_CONFIG_OPTION_CSN_HIGH_INT_DISABLE					(SPISCON0_INT_CSN_HIGH_DISABLE)			//Disable CSN high interrupt
+#define SSPI_CSN_HIGH_INT_ENABLE					(0)										//Enable CSN high interrupt
+#define SSPI_CSN_HIGH_INT_DISABLE					(SPISCON0_INT_CSN_HIGH_DISABLE)			//Disable CSN high interrupt
 
 
 ///////////////////////////////////////////
@@ -67,15 +67,20 @@
 #define sspi_get_status()						(SPISSTAT)														//Returns status of slave SPI
 
 //For the following macros, use sspi_get_status() to read SPISSTAT into temporary variable, and use the variable as the argument to the macro
-#define	sspi_is_spi_slave_done(spisstat_val)	((spisstat_val & SPISSTAT_INT_SPI_SLAVE_DONE_FLAG) ? true : false)	//True if TX FIFO is empty, false otherwise
-#define	sspi_is_csn_low(spisstat_val)			((spisstat_val & SPISSTAT_INT_CSN_LOW_FLAG)  ? true : false)		//True if RX FIFO is full, false otherwise
-#define	sspi_is_csn_high(spisstat_val)			((spisstat_val & SPISSTAT_INT_CSN_HIGH_FLAG) ? true : false)		//True if RX data is ready, false otherwise
+#define	sspi_is_spi_slave_done(spisstat_val)	(spisstat_val & SPISSTAT_INT_SPI_SLAVE_DONE_FLAG)//True if TX FIFO is empty, false otherwise
+#define	sspi_is_csn_low(spisstat_val)			(spisstat_val & SPISSTAT_INT_CSN_LOW_FLAG)		//True if RX FIFO is full, false otherwise
+#define	sspi_is_csn_high(spisstat_val)			(spisstat_val & SPISSTAT_INT_CSN_HIGH_FLAG)		//True if RX data is ready, false otherwise
 
+#define	SSPI_SPISCON0_MASK		0x7F	//Mask for the options used for SPISCON0
 
 ///////////////////////////////////////////
 // Function prototypes
 ///////////////////////////////////////////
-void sspi_configure(uint8_t sspi_config_options);
+static inline void sspi_configure(uint8_t sspi_config_options) __reentrant
+{
+	//Set up SPISCON0 register from sspi_config_options
+	SPISCON0 = (SPISCON0 & ~SSPI_SPISCON0_MASK) | (sspi_config_options & SSPI_SPISCON0_MASK);
+}
 uint8_t sspi_read_write(uint8_t sspi_data) __reentrant;
 
 #endif /*SSPI_H_*/

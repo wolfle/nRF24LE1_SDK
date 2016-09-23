@@ -89,12 +89,30 @@
 ////////////////////////////
 // Function prototypes
 ////////////////////////////
-void flash_read_bytes(uint16_t addr, uint8_t * dest, uint16_t len);
 void flash_erase_page(uint8_t page);
 void flash_write_byte(uint16_t addr, uint8_t val);
 void flash_write_bytes(uint16_t addr, uint8_t * src, uint16_t len);
-int16_t flash_get_page_size(uint8_t page); //return -1 if addr not in range
-char flash_get_page_num(uint16_t addr); //return -1 if addr not in range
+
+static inline void flash_read_bytes(uint16_t addr, uint8_t * dest, uint16_t len){
+  while(len--) *dest++ = *(uint8_t __xdata *)addr++;
+}
+
+static inline char flash_get_page_num(uint16_t addr){
+	return addr <= FLASH_CODE_END_ADDRESS ? FLASH_CODE_FIRST_PAGE_NUM + ((addr - FLASH_CODE_START_ADDRESS) / FLASH_CODE_PAGE_SIZE):
+		(addr >= FLASH_NV_EXT_START_ADDRESS) && (addr <= FLASH_NV_EXT_END_ADDRESS) ?
+			FLASH_NV_EXT_FIRST_PAGE_NUM + ((addr - FLASH_NV_EXT_START_ADDRESS) / FLASH_NV_EXT_PAGE_SIZE):
+		addr >= FLASH_NV_STD_START_ADDRESS ?
+			FLASH_NV_STD_FIRST_PAGE_NUM + ((addr - FLASH_NV_STD_START_ADDRESS) / FLASH_NV_STD_PAGE_SIZE): 
+		-1;
+}
+
+static inline int16_t flash_get_page_size(uint8_t page){
+	return page < FLASH_CODE_NUM_PAGES ? FLASH_CODE_PAGE_SIZE:
+		(page < (FLASH_CODE_NUM_PAGES + FLASH_NV_EXT_NUM_PAGES)) ? FLASH_NV_EXT_PAGE_SIZE:
+		page < FLASH_NUM_PAGES ? FLASH_NV_STD_PAGE_SIZE:
+		-1;
+}
+
 	
 inline uint8_t flash_read_byte(uint16_t addr){return *((uint8_t __xdata *)addr);}
 //Determine if the new val can be written into the flash with cur val without page erasion. Write can only do 1->0. Erasion make all bits to 1.

@@ -30,4 +30,3 @@ void flash_write_bytes(uint16_t addr, uint8_t * src, uint16_t len)
 			wait_for_flash_write_complete();
 		} )
 }
-

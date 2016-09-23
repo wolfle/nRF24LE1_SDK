@@ -196,3 +196,55 @@ uint8_t rf_write_ack_payload(uint8_t pipe, const uint8_t * buf, uint8_t len){
 	return rf_spi_write(RF_W_ACK_PAYLOAD|(pipe&0x7), buf, len);
 }
 
+void nrf_irq()
+{
+  uint8_t status=rf_get_status();
+
+  // Transmission success
+  if(rf_is_tx_ds_active(status))  send_success = true; // Data has been sent
+  
+  // Transmission failed (maximum re-transmits)
+  if(rf_is_max_rt_active(status)){
+      rf_flush_tx();
+      send_success = false;
+  }
+
+  // Data received 
+  if(rf_is_rx_dr_active(status)){
+      rf_read_rx_payload(rcvd_buf,PAYLOAD_SIZE,NULL); //can be only one payload from host ack
+      packet_received = true;
+  }
+}
+
+static void send(command_t command, uint8_t size) //size includes cmd
+{
+  send_success = false;
+  packet_received = false;
+ // Copy command to send buffer.
+  send_buf[0] = command;
+  rf_write_payload(send_buf, size);
+static void send(command_t command, uint8_t size) //size includes cmd
+{
+  send_success = false;
+  packet_received = false;
+ // Copy command to send buffer.
+  send_buf[0] = command;
+  rf_write_payload(send_buf, size);
+
+  // Activate sender
+  CE_H;
+  // Wait for radio to transmit
+  irq_wait_flag(rf_irq_flag) ;
+  nrf_irq();
+
+  CE_L;
+}
+
+  // Activate sender
+  CE_H;
+  // Wait for radio to transmit
+  irq_wait_flag(rf_irq_flag) ;
+  nrf_irq();
+
+  CE_L;
+}

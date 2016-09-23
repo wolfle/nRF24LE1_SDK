@@ -542,8 +542,7 @@ __sbit __at 0xFF FSR_SB_ENDBG;
 ///////////////////////////////////////////
 // Bit defines for CLKCTRL register
 ///////////////////////////////////////////
-#define CLKCTRL_CLK_FREQ_SHIFT					0
-#define CLKCTRL_CLK_FREQ_MASK					(0x07 << CLKCTRL_CLK_FREQ_SHIFT)
+#define CLKCTRL_CLK_FREQ_MASK					(0x07 )
 #define CLKCTRL_XOSC16M_ACTIVE_WKUP_INT_ENABLE	0x08
 #define CLKCTRL_XOSC16M_RCOSC16M_START_SHIFT	4
 #define CLKCTRL_XOSC16M_RCOSC16M_START_MASK		(0x03 << CLKCTRL_XOSC16M_RCOSC16M_START_SHIFT)
@@ -553,8 +552,7 @@ __sbit __at 0xFF FSR_SB_ENDBG;
 ///////////////////////////////////////////
 // Bit defines for CLKLFCTRL register
 ///////////////////////////////////////////
-#define CLKLFCTRL_CLKLF_SRC_SHIFT		0
-#define CLKLFCTRL_CLKLF_SRC_MASK		(0x07 << CLKLFCTRL_CLKLF_SRC_SHIFT)
+#define CLKLFCTRL_CLKLF_SRC_MASK		(0x07 )
 #define CLKLFCTRL_IS_CLKLF_SRC_XOSC16M	0x08
 #define CLKLFCTRL_IS_CLKLF_READY		0x40
 #define CLKLFCTRL_CLKLF_VAL_READ		0x80
@@ -562,8 +560,7 @@ __sbit __at 0xFF FSR_SB_ENDBG;
 ///////////////////////////////////////////
 // Bit defines for PWRDWN register
 ///////////////////////////////////////////
-#define PWRDWN_PWR_CNTL_SHIFT				0
-#define PWRDWN_PWR_CNTL_MASK				(0x07 << PWRDWN_PWR_CNTL_SHIFT)
+#define PWRDWN_PWR_CNTL_MASK				(0x07 )
 #define PWRDWN_PWR_IS_WAKE_FROM_COMPARATOR	0x20
 #define PWRDWN_PWR_IS_WAKE_FROM_TICK		0x40
 #define PWRDWN_PWR_IS_WAKE_FROM_PIN			0x80
@@ -571,8 +568,7 @@ __sbit __at 0xFF FSR_SB_ENDBG;
 ///////////////////////////////////////////
 // Bit defines for RSTREAS register
 ///////////////////////////////////////////
-#define RSTREAS_RESET_REASON_SHIFT	0
-#define RSTREAS_RESET_REASON_MASK	(0x07 << RSTREAS_RESET_REASON_SHIFT)
+#define RSTREAS_RESET_REASON_MASK	(0x07 )
 
 ///////////////////////////////////////////
 // Bit defines for OPMCON register
@@ -592,8 +588,7 @@ __sbit __at 0xFF FSR_SB_ENDBG;
 ///////////////////////////////////////////
 // Bit defines for WUCON register
 ///////////////////////////////////////////
-#define WUCON_WAKE_ON_MISCIRQ_SHIFT		0
-#define WUCON_WAKE_ON_MISCIRQ_MASK		(0x03 << WUCON_WAKE_ON_MISCIRQ_SHIFT)
+#define WUCON_WAKE_ON_MISCIRQ_MASK		(0x03 )
 #define WUCON_WAKE_ON_WUOPIRQ_SHIFT		2
 #define WUCON_WAKE_ON_WUOPIRQ_MASK		(0x03 << WUCON_WAKE_ON_WUOPIRQ_SHIFT)
 #define WUCON_WAKE_ON_RTC2_TICK_SHIFT	4
@@ -625,8 +620,7 @@ __sbit __at 0xFF FSR_SB_ENDBG;
 ///////////////////////////////////////////
 // Bit defines for T2CON register
 ///////////////////////////////////////////
-#define T2CON_INPUT_SEL_SHIFT		0
-#define T2CON_INPUT_SEL_MASK		(0x03 << T2CON_INPUT_SEL_SHIFT)
+#define T2CON_INPUT_SEL_MASK		(0x03 )
 #define T2CON_COMPARE_MODE			0x02
 #define T2CON_RELOAD_MODE_SHIFT		3
 #define T2CON_RELOAD_MODE_MASK		(0x03 << T2CON_RELOAD_MODE_SHIFT)
@@ -637,8 +631,7 @@ __sbit __at 0xFF FSR_SB_ENDBG;
 ///////////////////////////////////////////
 // Bit defines for CCEN register
 ///////////////////////////////////////////
-#define CCEN_CRC_MODE_SHIFT			0
-#define CCEN_CRC_MODE_MASK			(0x03 << CCEN_CRC_MODE_SHIFT)
+#define CCEN_CRC_MODE_MASK			(0x03 )
 #define CCEN_CC1_MODE_SHIFT			2
 #define CCEN_CC1_MODE_MASK			(0x03 << CCEN_CC1_MODE_SHIFT)
 #define CCEN_CC2_MODE_SHIFT			4
@@ -712,9 +705,9 @@ __sbit __at 0xFF FSR_SB_ENDBG;
 ///////////////////////////////////////////
 // Additional defines
 ///////////////////////////////////////////
-#define	CCLK_MAX_FREQ_HZ	16000000					//16 MHz clock frequency
-#define	CCLK_MAX_FREQ_KHZ	(CCLK_MAX_FREQ_HZ / 1000)	//16 MHz clock frequency
-#define	CCLK_MAX_FREQ_MHZ	(CCLK_MAX_FREQ_KHZ / 1000)	//16 MHz clock frequency
+#define	CCLK_MAX_FREQ_MHZ	(16)	//16 MHz clock frequency
+#define	CCLK_MAX_FREQ_KHZ	((uint16_t)CCLK_MAX_FREQ_MHZ * 1000)	//16 MHz clock frequency
+#define	CCLK_MAX_FREQ_HZ	((uint32_t)CCLK_MAX_FREQ_KHZ * 1000)					//16 MHz clock frequency
 #define BIT_TRUE			1							//Simple define for 1
 #define BIT_FALSE			0							//Simple define for 0
 
