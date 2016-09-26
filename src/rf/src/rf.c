@@ -8,6 +8,10 @@
 #define rf_set_csn()	sbit_set(RFCON_SB_RFCSN)	//Sets the CSN pin
 #define rf_get_csn()	RFCON_SB_RFCSN				//Gets the value of the CSN pin
 
+static uint8_t __xdata rbuf[PAYLOAD_SIZE];
+static rf_rcb_t rcb;
+static rf_scb_t scb;
+
 static uint8_t rf_spi_exchange_byte(uint8_t byte)
 {
 	SPIRDAT = byte; //Send byte over SPI
@@ -165,10 +169,10 @@ static uint8_t rf_read_rx_payload_width(){
 	return rf_spi_read_one(RF_R_RX_PL_WID);
 }
 
-uint8_t rf_read_rx_payload(uint8_t * buf, uint8_t len, uint8_t ** end){
+uint8_t rf_read_rx_payload(void){
 	uint8_t l=rf_read_rx_payload_width();
-	*end=(l>len?NULL:buf+l);
-	return rf_spi_read(RF_R_RX_PAYLOAD, buf, l);
+	rf_spi_read(RF_R_RX_PAYLOAD, rbuf, l);
+	return l;
 }
 /*
 void rf_set_as_rx(){
@@ -196,55 +200,39 @@ uint8_t rf_write_ack_payload(uint8_t pipe, const uint8_t * buf, uint8_t len){
 	return rf_spi_write(RF_W_ACK_PAYLOAD|(pipe&0x7), buf, len);
 }
 
-void nrf_irq()
-{
+irq_isr_rfirq(){
   uint8_t status=rf_get_status();
 
+  CE_L;
   // Transmission success
-  if(rf_is_tx_ds_active(status))  send_success = true; // Data has been sent
+  if(rf_is_tx_ds_active(status)&scb){
+	  scb(0); // Data has been sent
+	  scb=0;
+  }
   
   // Transmission failed (maximum re-transmits)
   if(rf_is_max_rt_active(status)){
       rf_flush_tx();
-      send_success = false;
+      if(scb){scb(1);scb=0;}
   }
 
   // Data received 
   if(rf_is_rx_dr_active(status)){
-      rf_read_rx_payload(rcvd_buf,PAYLOAD_SIZE,NULL); //can be only one payload from host ack
-      packet_received = true;
+      if(rcb){
+		  rcb(rbuf, rf_read_rx_payload());
+		  rcb=0;
+      }else rf_read_rx_payload();
   }
+  
 }
 
-static void send(command_t command, uint8_t size) //size includes cmd
+PT(rf_send(uint8_t *buf, uint8_t size, rf_scb_t scb_, rf_rcb_t rcb_) //size includes cmd
 {
-  send_success = false;
-  packet_received = false;
- // Copy command to send buffer.
-  send_buf[0] = command;
-  rf_write_payload(send_buf, size);
-static void send(command_t command, uint8_t size) //size includes cmd
-{
-  send_success = false;
-  packet_received = false;
- // Copy command to send buffer.
-  send_buf[0] = command;
-  rf_write_payload(send_buf, size);
-
+	PT_B()
+	PT_WAIT(!scb);
+  scb=scb_;
+  rcb=rcb_;
+  rf_write_payload(buf, size);
   // Activate sender
   CE_H;
-  // Wait for radio to transmit
-  irq_wait_flag(rf_irq_flag) ;
-  nrf_irq();
-
-  CE_L;
-}
-
-  // Activate sender
-  CE_H;
-  // Wait for radio to transmit
-  irq_wait_flag(rf_irq_flag) ;
-  nrf_irq();
-
-  CE_L;
 }

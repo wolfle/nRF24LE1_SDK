@@ -332,6 +332,9 @@ typedef enum {
 	crc0, crc1, crc2
 } rf_crc_e;
 
+typedef void(*rf_rcb_t)(uint8_t *buf, uint8_t len); //callback when received a payload
+typedef void(*rf_scb_t)(uint8_t fail);	//callback when sent a payload, >0 means failed
+
 //config: 0x08 : ptx, 1bit crc, power down, enable all interrupts; 6 mask rx_dr, 5 mask tx_ds, 4 mask max_rt, 3 en_crc, 2 en_2b_crc, 1 pwr_up, 0 prim_rx
 //en_aa: 0x3f : enable auto ack for all pipes
 //en_rxaddr: 0x03 : enable pipe0 and pipe1
@@ -392,4 +395,7 @@ inline uint8_t rf_observe_tx(){
 inline bool rf_rpd_active() {
 	return ((rf_read_register_one(RF_RPD) & RF_RPD_RPD) ? true : false);
 }
+
+
+
 #endif /*RF_H_*/
