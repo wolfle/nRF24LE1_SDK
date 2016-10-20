@@ -1,7 +1,7 @@
 #include "gpio.h"
 #include "reg24le1.h"
 #include "interrupt.h"
-#include "delay.h"
+#include "timer.h"
 #include "w2.h"
 
 
@@ -63,20 +63,21 @@
 #define w2_last_rxed_addr_was_broadcast(w2con1_value)	((w2con1_value & W2CON1_SLAVE_LAST_ADDR_WAS_BROADCAST) != true ? 1 : false)		//Returns true if last received address was the broadcast address (0x00), false otherwise
 
 ////////////////////////////
-#define w2_prepare_scl_sda()	gpio_pin_val_sbit_clear(GPIO_PIN_SBIT_FUNC_W2SCL);\
-								gpio_pin_val_sbit_clear(GPIO_PIN_SBIT_FUNC_W2SDA)						//Clear the GPIO values of the pins
-#define w2_clear_sda()			gpio_pins_dir_output(GPIO_PIN_REG_FUNC_W2SDA, GPIO_PIN_MASK_FUNC_W2SDA)	//This causes the bus to see a value of 0 (call w2_prepare_scl_sda() first)
-#define w2_set_sda()			gpio_pins_dir_input(GPIO_PIN_REG_FUNC_W2SDA, GPIO_PIN_MASK_FUNC_W2SDA)	//This causes the bus to see a value of 1
+#define w2_prepare_scl_sda()	gpio_sbit_clear(GPIO_PIN_SBIT_FUNC_W2SCL);\
+								gpio_sbit_clear(GPIO_PIN_SBIT_FUNC_W2SDA)						//Clear the GPIO values of the pins
+#define w2_clear_sda()			gpios_dir_output(GPIO_PIN_REG_FUNC_W2SDA, GPIO_PIN_MASK_FUNC_W2SDA)	//This causes the bus to see a value of 0 (call w2_prepare_scl_sda() first)
+#define w2_set_sda()			gpios_dir_input(GPIO_PIN_REG_FUNC_W2SDA, GPIO_PIN_MASK_FUNC_W2SDA)	//This causes the bus to see a value of 1
 #define w2_read_sda()			(GPIO_PIN_SBIT_FUNC_W2SDA)												//Returns the current value of W2SDA
-#define w2_clear_scl()			gpio_pins_dir_output(GPIO_PIN_REG_FUNC_W2SCL, GPIO_PIN_MASK_FUNC_W2SCL)	//This causes the bus to see a value of 0 (call w2_prepare_scl_sda() first)
-#define w2_set_scl()			gpio_pins_dir_input(GPIO_PIN_REG_FUNC_W2SCL, GPIO_PIN_MASK_FUNC_W2SCL)	//This causes the bus to see a value of 1
+#define w2_clear_scl()			gpios_dir_output(GPIO_PIN_REG_FUNC_W2SCL, GPIO_PIN_MASK_FUNC_W2SCL)	//This causes the bus to see a value of 0 (call w2_prepare_scl_sda() first)
+#define w2_set_scl()			gpios_dir_input(GPIO_PIN_REG_FUNC_W2SCL, GPIO_PIN_MASK_FUNC_W2SCL)	//This causes the bus to see a value of 1
 #define w2_read_scl()			(GPIO_PIN_SBIT_FUNC_W2SCL)												//Returns the current value of W2SCL
 
 #define w2_is_reading(addr) ((addr)&W2_MASTER_READ)
 
-static 	uint8_t addr; //and direction bit
-static	volatile uint8_t  * buf;  // if nack received, set buf=0
-static 	volatile uint16_t len;
+static  __bit reading; // direction bit
+static  __bit busy=0;
+static	volatile __pdata uint8_t  * __data buf;  // if nack received, set buf=0
+static 	volatile __data uint16_t len;
 
 void w2_init(uint8_t opt, uint8_t addr_in_slave_mode){
 	w2_enable(); //Datasheet v1.6, p. 159 states that you must enable 2 wire before changing anything else
@@ -92,42 +93,40 @@ void w2_init(uint8_t opt, uint8_t addr_in_slave_mode){
 	if(!w2_is_in_master_mode())	W2SADR = addr_in_slave_mode;
 	if(!opt&W2_ENABLE)w2_disable();
 	
+	buf=0;
+	len=0;
 	irq_flag_clear(irq_flag_spi_2wire); // Is this neccesary?
 	irq_spi_2wire_enable();
 	irq_unmask_2wire();
-	addr=0;
-	buf=0;
-	len=0;
 }
 
-void w2_irq_handle(void){
+void w2_irq_handle(void) __reentrant{
 	uint8_t w2con1=W2CON1;
 
 	if(w2_data_txed_or_rxed(w2con1)&&len){
 
-		if(w2_is_reading(addr)){
-			*buf++=w2_get_rxed_byte();
-			--len;
-		}else{ //writing
-			if(--len)w2_send_byte(*buf++);
-		}
+		--len;
+		if(reading)	*buf=w2_get_rxed_byte();
+		else if(len)w2_send_byte(*buf);
+		++buf;
 		
 		if(len==1)w2_send_stop_condition();
 		
 		if(w2_get_last_rxed_ack(w2con1)){ //nack received
-			if(!w2_is_reading(addr)) w2_send_stop_condition(); //else need to reset w2 after the irq handle return
+			if(!reading) w2_send_stop_condition(); //else need to reset w2 after the irq handle return
 			buf=0;
 		}
 		if(!len)buf=0;
 	}
 }
 
-static void w2_master_io(char isread,uint8_t address, uint8_t * data_buf, uint16_t size){
-	addr=((address << W2DAT_ADDRESS_SHIFT) | (isread?1:0));
+static void w2_master_io(bool isread,uint8_t address, void * data_buf, uint16_t size){
+	//addr=((address << W2DAT_ADDRESS_SHIFT) | (isread?1:0));
+	reading=isread;
 	buf=data_buf;
 	len=size;
 	w2_send_start_condition();
-	w2_send_byte( addr );
+	w2_send_byte( (address << W2DAT_ADDRESS_SHIFT) | (isread?1:0) );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -176,82 +175,80 @@ static inline void w2_master_software_reset(void){
 	W2CON0 = w2con0_copy;
 }
 
-PT(w2_master_read,uint8_t slave_address, uint8_t * data_buf, uint16_t data_len)
+PT(w2_master_read, uint8_t slave_address, __pdata void * data_buf, uint16_t data_len)
 {
-	PT_B()
+	PT_B
+		//wait for completion
+		PT_LOCK(busy);
+					
+		//Send the reading request
+		w2_master_io(W2_MASTER_READ,slave_address, data_buf, data_len);
 		//wait for completion
 		PT_WAIT(!buf);
-					
-		if(data_buf){
-			//Send the reading request
-			w2_master_io(W2_MASTER_READ,slave_address, data_buf, data_len);
-			//wait for completioin
-			PT_WAIT(!buf);
-			//check result: completed or error
-			if(len){
-				w2_master_software_reset(); //if error occured in reading, reset w2 according to nordic sdk
-				ret=-EIO;
-				goto outr;
-			}
+		//check result: completed or error
+		if(len){
+			w2_master_software_reset(); //if error occured in reading, reset w2 according to nordic sdk
+			ret=-EIO;
 		}
-		
-	PT_E(outr)
+		PT_UNLOCK(busy);
+	PT_E
 }
 
-PT(w2_master_read_reg, uint8_t slave_address, uint8_t regaddr,  uint8_t * data_buf, uint16_t data_len)
+PT(w2_master_read_reg, uint8_t slave_address, uint8_t regaddr,  __pdata void * data_buf, uint16_t data_len)
 {
-	PT_B()
+	PT_B
 		//wait for completion
-		PT_WAIT(!buf);
+		PT_LOCK(busy);
 				
 		//Send the start condition, control byte, and address byte(s) in a write operation
 		w2_master_io(W2_MASTER_WRITE, slave_address, &regaddr, 1);
 		
 		//wait for completion
 		PT_WAIT(!buf);
+		PT_UNLOCK(busy);
 		//check result: completed or error
-		CHECKOUT(len,-EIO,outr);
+		CHECKR(len,-EIO);
 	
 		PT_CALL(w2_master_read,slave_address,data_buf,data_len);
 		
-	PT_E(outr)
+	PT_E
 }
 	
-PT(w2_master_write,uint8_t slave_address, uint8_t * data_buf, uint16_t data_len)
+PT(w2_master_write, uint8_t slave_address, __pdata void * data_buf, uint16_t data_len)
 {
 
-	PT_B()
+	PT_B
+		//wait for completion
+		PT_LOCK(busy);
+		
+		//Send the writing request
+		w2_master_io(W2_MASTER_WRITE,slave_address, data_buf, data_len);
 		//wait for completion
 		PT_WAIT(!buf);
+		//check result: completed or error
+		if(len)ret=-EIO;
+		PT_UNLOCK(busy);
 		
-		if(data_buf){
-			//Send the writing request
-			w2_master_io(W2_MASTER_WRITE,slave_address, data_buf, data_len);
-			//wait for completioin
-			PT_WAIT(!buf);
-			//check result: completed or error
-			CHECKOUT(len,-EIO,outw);
-		}
-		
-	PT_E(outw)
+	PT_E
 }
 
-PT(w2_master_write_reg,uint8_t slave_address, uint8_t regaddr, uint8_t * data_buf, uint16_t data_len)
+PT(w2_master_write_reg, uint8_t slave_address, uint8_t regaddr, __pdata void * data_buf, uint16_t data_len)
 {
 
-	PT_B()
+	PT_B
 		//wait for completion
-		PT_WAIT(!buf);
+		PT_LOCK(busy);
 		
 		//Send the writing request
 		w2_master_io(W2_MASTER_WRITE,slave_address, &regaddr, 1);
 		//wait for completioin
 		PT_WAIT(!buf);
+		PT_UNLOCK(busy);
 		//check result: completed or error
-		CHECKOUT(len,-EIO,outw);
+		CHECKR(len,-EIO);
 		
 		PT_CALL(w2_master_write,slave_address,data_buf,data_len);
 		
-	PT_E(outw)
+	PT_E
 }
 

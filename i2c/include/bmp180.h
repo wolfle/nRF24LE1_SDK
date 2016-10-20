@@ -7,9 +7,9 @@
 #define BMP180_OSS_OCTAL 3
 
 
-PT_V(bmp180_init);
-PT(bmp180_measure_t,int32_t *t);
-PT(bmp180_measure_p,uint8_t oss,int32_t *p);
+PT_V(bmp180_init);//3
+PT_V(bmp180_measure_t); //3
+PT(bmp180_measure_p, int8_t oss,__pdata int32_t * p);//3
 //uint16_t bmp180_altitude(uint32_t p);
 
 #endif

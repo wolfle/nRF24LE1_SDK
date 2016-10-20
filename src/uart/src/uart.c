@@ -248,7 +248,7 @@ void uart_configure_manual_baud_calc(uint8_t uart_config_options, uint16_t s0rel
 			timer1_init(TIMER1_MODE_2_8_BIT_AUTO_RLD_TMR |
 							 TIMER1_FUNCTION_TIMER |
 							 TIMER1_GATE_ALWAYS_RUN_TIMER,
-							 (uint8_t)s0rel_val_if_br_gen_or_th1_val_if_tmr1,0);
+							 (uint8_t)s0rel_val_if_br_gen_or_th1_val_if_tmr1);
 
 //			timer1_run(); //enable the timer
 		}

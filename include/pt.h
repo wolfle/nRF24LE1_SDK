@@ -22,9 +22,11 @@
 #define PT_LC_INITVAL 1
 
 #define CHECKOUT(c,err,out) if(c){ret=err;goto out;}
-#define CHECKRES(f,out)	if((ret=(f))<0)goto out
+#define CHECKEOUT(f,out)	if((ret=(f))<0)goto out
+#define CHECKR(c,err) if(c){return err;}
+#define CHECKERR(f)	if((ret=(f))<0) return ret;
 
-typedef unsigned short lc_t;
+typedef __pdata unsigned short lc_t;
 
 #define WRAP(x)		do{ x }while(0)
 
@@ -36,7 +38,9 @@ typedef unsigned short lc_t;
 
 #define PT_DECLARE(lc)	lc_t PT_INIT(lc)
 
-#define PT_B()				char ret=SUCCESS;						\
+//#define PT_INITARRAY(a,size) memset(a,PT_LC_INITVAL,size)
+
+#define PT_B				char ret=SUCCESS;						\
 							switch(*_lc){								\
 								case PT_LC_INITVAL:
 
@@ -54,24 +58,30 @@ typedef unsigned short lc_t;
 							
 #define PT_RESET_					PT_INIT(*_lc); return PT_YIELDED;
 
-#define PT_E(out)					default: 	break;						\
+#define PT_E					default: 	break;						\
 							}											\
-							out: PT_INIT(*_lc); return ret;
+							return ret;
 
 #define PT_WAIT(condition)	WRAP(PT_WAIT_(condition))
 #define PT_YIELD()			WRAP(PT_YIELD_)
 #define PT_YWAIT(condition)	WRAP(PT_YWAIT_(condition))
 #define PT_RESET			WRAP(PT_RESET_)
 
-#define PT_CALL(name,args...)	WRAP(PT_WAIT_(name(_lc+sizeof(lc_t),args)<PT_WAITING))
-#define PT_CALLV(name)			WRAP(PT_WAIT_(name(_lc+sizeof(lc_t))<PT_WAITING))
+#define PT_CALL_(name,args...)	PT_WAIT_((ret=name(_lc+1,args))<PT_WAITING)	\
+								PT_INIT(*(_lc+1));
+#define PT_CALLV_(name)			PT_WAIT_((ret=name(_lc+1))<PT_WAITING)	\
+								PT_INIT(*(_lc+1));
 
-#define PT_CALL_OUT(out,name, args...)	WRAP(PT_WAIT_((ret=name(_lc+sizeof(lc_t),args))<PT_WAITING);\
+#define PT_CALL(name,args...)	WRAP(PT_CALL_(name,args))
+#define PT_CALLV(name)			WRAP(PT_CALLV_(name))
+
+#define PT_CALL_OUT(out,name, args...)	WRAP(PT_CALL_(name,args)		\
 												if(ret<0)goto out;)
-#define PT_CALLV_OUT(out,name, args...)	WRAP(PT_WAIT_((ret=name(_lc+sizeof(lc_t)))<PT_WAITING);\
+#define PT_CALLV_OUT(out,name, args...)	WRAP(PT_CALLV_(name)			\
 												if(ret<0)goto out;)
 
 #define PT_NEST_CALL(name,args...)	return name(_lc,args); 
+#define PT_NEST_CALLV(name,args...)	return name(_lc); 
 
 #define PT_LOCK(lock) 	WRAP(PT_WAIT_(!lock);lock=1;)
 #define PT_UNLOCK(lock)	WRAP(lock=0;)

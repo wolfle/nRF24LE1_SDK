@@ -88,8 +88,8 @@ Under linux, every single data write must begin with head 0x40.
 #define ACTSCROLL 0x2F
 #define DEACTSCROLL 0x2E
 
-static uint8_t buf[9]; //is 9 enough for w2 send?
-static char sbuf[17];
+static __pdata uint8_t buf[9],i; //is 9 enough for w2 send?
+static __pdata char sbuf[17];
 static __bit busy=0;
 
 static PT(send_cmd_,uint8_t c){
@@ -101,69 +101,18 @@ static PT(send_cmd_,uint8_t c){
 #define send_cmd(cmd) PT_CALL(send_cmd_,cmd)
 
 PT_V(ssd1306_init){
-/*	this won't work, as the chip wants a stop after every command word.
-	uint8_t buf[]={DISPLAYOFF,SETDISPLAYCLOCKDIV,0x81,SETMULTIPLEX,0x3F,
+	static const uint8_t ibuf[]={DISPLAYOFF,SETDISPLAYCLOCKDIV,0x80,SETMULTIPLEX,0x3F,
 		SETDISPLAYOFFSET,0x0,SETSTARTLINE | 0x0,CHARGEPUMP,0x14,
 		MEMORYMODE,0x0,COLUMNADDRESS,0x0,0x7f,PAGEADDRESS,0x0,0x7,
 		SEGREMAP | 0x1,COMSCANDEC,SETCOMPINS,0x12,SETCONTRAST,0x7f,
 		SETPRECHARGE,0x11,SETVCOMDETECT,0x20,NORMALDISPLAY,
 		DISPLAYALLON_RESUME,DISPLAYON};
-	iic_write(fd,ADDRESS,buf,sizeof(buf));
-*/
-PT_B()
+PT_B
 	PT_LOCK(busy);
-	
-    send_cmd(DISPLAYOFF);
-
-    send_cmd(SETDISPLAYCLOCKDIV);
-    send_cmd(0x80); //0x81
-
-    send_cmd(SETMULTIPLEX);
-    send_cmd(0x3F);
-    
-    send_cmd(SETDISPLAYOFFSET);
-    send_cmd(0x00);
-    
-    send_cmd(SETSTARTLINE | 0x00);
-    
-    // We use internal charge pump
-    send_cmd(CHARGEPUMP);
-    send_cmd(0x14);
-    
-    // Horizontal memory mode
-    send_cmd(MEMORYMODE);
-    send_cmd(0x00);
-    
-    send_cmd(SEGREMAP | 0x01);
-
-    send_cmd(COMSCANDEC);
-
-    send_cmd(SETCOMPINS);
-    send_cmd(0x12);
-
-    // Max contrast
-    send_cmd(SETCONTRAST);
-    send_cmd(0x7F);
-
-    send_cmd(SETPRECHARGE);
-    send_cmd(0xF1); //0x11
-
-    send_cmd(SETVCOMDETECT);
-    send_cmd(0x40); //0x20
-
-    send_cmd(DISPLAYALLON_RESUME);
-
-    // Non-inverted display
-    send_cmd(NORMALDISPLAY);
-
-	send_cmd(DEACTSCROLL);
-
-    // Turn display back on
-    send_cmd(DISPLAYON);
-    
+	for(i=0;i<sizeof(ibuf);++i)send_cmd(ibuf[i]);
     PT_UNLOCK(busy);
     
-PT_E(outi)
+PT_E
 }
 
 PT_V(ssd1306_displayoff){
@@ -175,115 +124,103 @@ PT_V(ssd1306_displayon){
 }
 
 static PT(ssd1306_set_clock,uint8_t val) {
-	PT_B()
+	PT_B
 	send_cmd(SETDISPLAYCLOCKDIV);
 	send_cmd(val);
-	PT_E(outclock)
+	PT_E
 }
 
 static PT(ssd1306_set_addr_mode,uint8_t mode) {
 	// 0 -> horizontal (write column, increment column pointer, at column overrun reset column pointer and increment page pointer)
 	// 1 -> vertical (write column, increment page pointer, at page overrun reset page pointer and increment column pointer)
 	// 2 -> page (write column, increment column pointer, reset column pointer at overrun)
-	PT_B()
+	PT_B
 	send_cmd(MEMORYMODE);
 	send_cmd((mode < 2) ? mode : 0);
-	PT_E(outaddrm)	
+	PT_E
 }
-
-PT(ssd1306_invert, uint8_t goinvert){
+/*
+PT(ssd1306_invert, bool goinvert){
 	PT_NEST_CALL(send_cmd_,goinvert?INVERTDISPLAY:NORMALDISPLAY);
 }
 
-PT(ssd1306_contrast,uint8_t contr){
-	PT_B()
+PT(ssd1306_contrast, uint8_t contr){
+	PT_B
 	send_cmd(SETCONTRAST);
 	send_cmd(contr);
-	PT_E(outctrst)
+	PT_E
 }
-
-static PT(ssd1306_tile, uint8_t * tbuf, uint16_t size){ //tile must reserve [0] for head DATCTRL
-	tbuf[0]=DATCTRL;
+*/
+//1
+static PT(ssd1306_tile, __pdata void * tbuf, uint16_t size){ //tile must reserve [0] for head DATCTRL
+	*((char *)tbuf)=DATCTRL;
 	PT_NEST_CALL(w2_master_write,ADDRESS,tbuf,size);
 }
 
-static PT(s_putc,char c) {
-PT_B()
+static void s_putc(char c) { // put char into buf
+//PT_B
 	// remap from petscii to ascii, shifts drawing characters into the lower 32 ascii cells
-	if(c > 'A' && c < 'Z') { }               // upper-case ascii range
-	else if(c >= 'a' && c <= 'z') { c -= 96; } // lower-case ascii range
-	else if(c > 31 && c < 64) { }            // numbers and symbols
+	if(c >= 'a' && c <= 'z') { c -= 96; } // lower-case ascii range
+//	else if(c > 'A' && c < 'Z') { }               // upper-case ascii range
+//	else if(c > 31 && c < 64) { }            // numbers and symbols
 	else if(c < 32) { c += 96; }             // low ascii
 	memcpy(buf+1,font + ((uint16_t)c<<3),8);
-	PT_CALL(ssd1306_tile,buf,9);
-PT_E(outputc)
+//	PT_CALL(ssd1306_tile,buf,9);
+//PT_E
 }
 
+//2
 static PT(ssd1306_range,uint8_t colstart, uint8_t colend, uint8_t pagestart, uint8_t pageend){
-PT_B()
+PT_B
 	send_cmd(COLUMNADDRESS);
 	send_cmd(colstart);
 	send_cmd(colend);
 	send_cmd(PAGEADDRESS);
 	send_cmd(pagestart);
 	send_cmd(pageend);
-PT_E(outrng)
+PT_E
 }
 
-static PT_V(ssd1306_home) {
+static PT_V(ssd1306_home) { //2
 	PT_NEST_CALL(ssd1306_range,0x0,0x7f,0x0,0x7);
 }
 
-static PT(ssd1306_move,uint8_t row, uint8_t col) {
+static PT(ssd1306_move,uint8_t row, uint8_t col) { //2
 	PT_NEST_CALL(ssd1306_range,col << 3, 0x7f,row,0x7);
 }
 
-PT_V(ssd1306_clear) {
-	uint8_t i=0;
-	PT_B()
+PT_V(ssd1306_clear) { //3
+	PT_B
 	PT_LOCK(busy);
 	PT_CALLV(ssd1306_home);
 	memset(buf,0,9);
-	for(; i < 128 ; ++i)PT_CALL(ssd1306_tile,buf,9);
-	PT_UNLOCK(busy);
-	PT_E(outclr)
-}
-
-PT(ssd1306_printf,uint8_t row, const char * format, ...){
-	va_list args;
-PT_B()
-	PT_LOCK(busy);
-	va_start(args,format);
-	vsprintf(sbuf,format,args);
-	va_end(args);
-	sbuf[16]=0; //force trancation
-	PT_CALL(ssd1306_move,row,0);
-	while(*sbuf != 0) {
-		PT_CALL(s_putc,*sbuf);
-		memmove(sbuf,sbuf+1,sizeof(sbuf)-1);
+	for(i=0; i < 128 ; ++i){
+		PT_CALL(ssd1306_tile,buf,9);
 	}
 	PT_UNLOCK(busy);
-PT_E(outprtf)
+	PT_E
 }
 
-PT(ssd1306_hscroll,char goleft,uint8_t startpage, uint8_t endpage, 
-	uint8_t startcol, uint8_t endcol, uint8_t speed){ //page 0~7; col virtual offset 0~0xff; speed 0~0xff
-PT_B()
+void putchar(char c){
+	sbuf[i++]=c;
+	if(i>=sizeof(sbuf))i=0;
+}
+
+PT(ssd1306_printf,uint8_t row, uint8_t col, __code const char * format, ...){
+	va_list args;
+PT_B
 	PT_LOCK(busy);
-	send_cmd(DEACTSCROLL);
-	send_cmd(goleft?HSCROLLLEFTSETUP:HSCROLLRIGHTSETUP);
-	send_cmd(0x0);
-	send_cmd(startpage);
-	send_cmd(speed);
-	send_cmd(endpage);
-	send_cmd(startcol);
-	send_cmd(endcol); //speed?
-	
-	send_cmd(ACTSCROLL);
+	va_start(args,format);
+	i=0;
+	printf_tiny(format,args);
+	va_end(args);
+	sbuf[16]=0; //force trancation
+	PT_CALL(ssd1306_move,row,col);
+	i=0;
+	while(sbuf[i] != 0){
+		s_putc(sbuf[i++]);
+		PT_CALL(ssd1306_tile,buf,9);
+	}
 	PT_UNLOCK(busy);
-PT_E(outhscrll)
-}
-
-PT_V(ssd1306_stopscroll){
-	PT_NEST_CALL(send_cmd_,DEACTSCROLL);
+PT_E
 }

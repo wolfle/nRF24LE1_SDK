@@ -1,6 +1,7 @@
 CFLAGS=-Iinclude 
 DFLAGS=-Iinclude -MM
-SDCC=sdcc
+SDCC=sdcc --stack-auto 
+# --opt-code-size
 SDAR=sdar
 SED=sed
 

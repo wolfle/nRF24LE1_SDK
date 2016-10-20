@@ -36,11 +36,11 @@
 ////////////////////////////
 // Function prototypes
 ////////////////////////////
-void w2_init(uint8_t w2_config_options,uint8_t address_in_slave_mode);
+void w2_init(uint8_t w2_config_options, uint8_t address_in_slave_mode);
 void w2_irq_handle(void);
-PT(w2_master_write,uint8_t slave_address, uint8_t * data_buf, uint16_t data_len);
-PT(w2_master_read,uint8_t slave_address, uint8_t * data_buf, uint16_t data_len);
-PT(w2_master_read_reg, uint8_t slave_address, uint8_t regaddr,  uint8_t * data_buf, uint16_t data_len);
-PT(w2_master_write_reg, uint8_t slave_address, uint8_t regaddr,  uint8_t * data_buf, uint16_t data_len);
+PT(w2_master_write, uint8_t slave_address, __pdata void *  data_buf, uint16_t data_len); //1
+PT(w2_master_read, uint8_t slave_address, __pdata void * data_buf, uint16_t data_len);  //1
+PT(w2_master_read_reg, uint8_t slave_address,  uint8_t regaddr,  __pdata void * data_buf, uint16_t data_len); //2
+PT(w2_master_write_reg, uint8_t slave_address, uint8_t regaddr, __pdata void * data_buf, uint16_t data_len);//2
 
 #endif /* _W2_H_ */

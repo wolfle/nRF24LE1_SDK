@@ -46,25 +46,25 @@
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Configuration defines for use in gpio_pin_configure() function...OR these together to form the gpio_pin_config_options argument
+// Configuration defines for use in gpio_configure() function...OR these together to form the gpio_config_options argument
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define GPIO_PIN_CONFIG_OPTION_DIR_INPUT									(0 << 0)						//Set the GPIO as an input
-#define GPIO_PIN_CONFIG_OPTION_DIR_OUTPUT									(1 << 0)						//Set the GPIO as an output
+#define GPIO_PIN_CONFIG_OPTION_DIR_INPUT									0					//Set the GPIO as an input
+#define GPIO_PIN_CONFIG_OPTION_DIR_OUTPUT									1						//Set the GPIO as an output
 
-#define GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_CLEAR								(0 << 1)						//If setting the GPIO as an output, clear its value
+#define GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_CLEAR								0						//If setting the GPIO as an output, clear its value
 #define GPIO_PIN_CONFIG_OPTION_OUTPUT_VAL_SET								(1 << 1)						//If setting the GPIO as an output, set its value
 
-#define GPIO_PIN_CONFIG_OPTION_PIN_MODE_INPUT_BUFFER_ON_NO_RESISTORS		(0x00 << PXCON_PINMODE_SHIFT)	//If setting the GPIO as an input, turn on the buffer and turn off the pull up/down resistors
+#define GPIO_PIN_CONFIG_OPTION_PIN_MODE_INPUT_BUFFER_ON_NO_RESISTORS		0x00							//If setting the GPIO as an input, turn on the buffer and turn off the pull up/down resistors
 #define GPIO_PIN_CONFIG_OPTION_PIN_MODE_INPUT_BUFFER_ON_PULL_DOWN_RESISTOR	(0x01 << PXCON_PINMODE_SHIFT)	//If setting the GPIO as an input, turn on the buffer and turn on the pull down resistor
 #define GPIO_PIN_CONFIG_OPTION_PIN_MODE_INPUT_BUFFER_ON_PULL_UP_RESISTOR	(0x02 << PXCON_PINMODE_SHIFT)	//If setting the GPIO as an input, turn on the buffer and turn on the pull up resistor
 #define GPIO_PIN_CONFIG_OPTION_PIN_MODE_INPUT_BUFFER_OFF					(0x03 << PXCON_PINMODE_SHIFT)	//If setting the GPIO as an input, turn off the buffer and the pull up/down resistors
 
-#define GPIO_PIN_CONFIG_OPTION_PIN_MODE_OUTPUT_BUFFER_NORMAL_DRIVE_STRENGTH	(0x00 << PXCON_PINMODE_SHIFT)	//If setting the GPIO as an output, set the output buffer to normal drive strength
+#define GPIO_PIN_CONFIG_OPTION_PIN_MODE_OUTPUT_BUFFER_NORMAL_DRIVE_STRENGTH	0x00 							//If setting the GPIO as an output, set the output buffer to normal drive strength
 #define GPIO_PIN_CONFIG_OPTION_PIN_MODE_OUTPUT_BUFFER_HIGH_DRIVE_STRENGTH	(0x03 << PXCON_PINMODE_SHIFT)	//If setting the GPIO as an output, set the output buffer to high drive strength
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin id defines for use in gpio_pin_configure() function - use only one member as the gpio_pin_id argument
+// GPIO pin id defines for use in gpio_configure() function - use only one member as the gpio_id argument
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 typedef enum
 {
@@ -102,7 +102,7 @@ typedef enum
 
 	GPIO_PIN_ID_NUM,
 	GPIO_PIN_ID_INVALID = 0xFF
-} gpio_pin_id_t;
+} gpio_id_t;
 
 
 ///////////////////////////////////////
@@ -110,7 +110,7 @@ typedef enum
 ///////////////////////////////////////
 #if (__TARG_PACKAGE_TYPE == NRF24LE1_PACKAGE_24_PIN)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin id function defines (these can be used in place of the GPIO_PIN_ID_* values above in gpio_pin_configure())
+// GPIO pin id function defines (these can be used in place of the GPIO_PIN_ID_* values above in gpio_configure())
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_ID_FUNC_GPINT0		GPIO_PIN_ID_P0_0
 #define GPIO_PIN_ID_FUNC_GPINT1		GPIO_PIN_ID_P0_2
@@ -155,7 +155,7 @@ typedef enum
 #define GPIO_PIN_ID_FUNC_AIN13		GPIO_PIN_ID_INVALID
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin function register defines (these can be used in gpio_pins_val_set/clear/complement() as the first argument)
+// GPIO pin function register defines (these can be used in gpios_set/clear/complement() as the first argument)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_REG_FUNC_GPINT0	P0
 #define GPIO_PIN_REG_FUNC_GPINT1	P0
@@ -192,7 +192,7 @@ typedef enum
 #define GPIO_PIN_REG_FUNC_AIN6		P0
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin function pin mask defines (these can be used in gpio_pins_val_set/clear/complement() as the second argument)
+// GPIO pin function pin mask defines (these can be used in gpios_set/clear/complement() as the second argument)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_MASK_FUNC_GPINT0	PX_D0
 #define GPIO_PIN_MASK_FUNC_GPINT1	PX_D2
@@ -229,7 +229,7 @@ typedef enum
 #define GPIO_PIN_MASK_FUNC_AIN6		PX_D6
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin sbit defines (these can be used in gpio_pin_val_sbit_set/clear/complement())
+// GPIO pin sbit defines (these can be used in gpio_sbit_set/clear/complement())
 /////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_SBIT_FUNC_GPINT0	P0_SB_D0
 #define GPIO_PIN_SBIT_FUNC_GPINT1	P0_SB_D2
@@ -271,7 +271,7 @@ typedef enum
 ///////////////////////////////////////
 #if (__TARG_PACKAGE_TYPE == NRF24LE1_PACKAGE_32_PIN)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin id function defines (these can be used in place of the GPIO_PIN_ID_* values above in gpio_pin_configure())
+// GPIO pin id function defines (these can be used in place of the GPIO_PIN_ID_* values above in gpio_configure())
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_ID_FUNC_GPINT0		GPIO_PIN_ID_P0_5
 #define GPIO_PIN_ID_FUNC_GPINT1		GPIO_PIN_ID_P0_6
@@ -316,7 +316,7 @@ typedef enum
 #define GPIO_PIN_ID_FUNC_AIN13		GPIO_PIN_ID_INVALID
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin function register defines (these can be used in gpio_pins_val_set/clear/complement() as the first argument)
+// GPIO pin function register defines (these can be used in gpios_set/clear/complement() as the first argument)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_REG_FUNC_GPINT0	P0
 #define GPIO_PIN_REG_FUNC_GPINT1	P0
@@ -357,7 +357,7 @@ typedef enum
 #define GPIO_PIN_REG_FUNC_AIN10		P1
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin function pin mask defines (these can be used in gpio_pins_val_set/clear/complement() as the second argument)
+// GPIO pin function pin mask defines (these can be used in gpios_set/clear/complement() as the second argument)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_MASK_FUNC_GPINT0	PX_D5
 #define GPIO_PIN_MASK_FUNC_GPINT1	PX_D6
@@ -398,7 +398,7 @@ typedef enum
 #define GPIO_PIN_MASK_FUNC_AIN10	PX_D2
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin sbit defines (these can be used in gpio_pin_val_sbit_set/clear/complement())
+// GPIO pin sbit defines (these can be used in gpio_sbit_set/clear/complement())
 /////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_SBIT_FUNC_GPINT0	P0_SB_D5
 #define GPIO_PIN_SBIT_FUNC_GPINT1	P0_SB_D6
@@ -444,7 +444,7 @@ typedef enum
 ///////////////////////////////////////
 #if (__TARG_PACKAGE_TYPE == NRF24LE1_PACKAGE_48_PIN)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin id function defines (these can be used in place of the GPIO_PIN_ID_* values above in gpio_pin_configure())
+// GPIO pin id function defines (these can be used in place of the GPIO_PIN_ID_* values above in gpio_configure())
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_ID_FUNC_GPINT0		GPIO_PIN_ID_P1_2
 #define GPIO_PIN_ID_FUNC_GPINT1		GPIO_PIN_ID_P1_3
@@ -489,7 +489,7 @@ typedef enum
 #define GPIO_PIN_ID_FUNC_AIN13		GPIO_PIN_ID_P1_5
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin function register defines (these can be used in gpio_pins_val_set/clear/complement() as the first argument)
+// GPIO pin function register defines (these can be used in gpios_set/clear/complement() as the first argument)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_REG_FUNC_GPINT0	P1
 #define GPIO_PIN_REG_FUNC_GPINT1	P1
@@ -534,7 +534,7 @@ typedef enum
 #define GPIO_PIN_REG_FUNC_AIN13		P1
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin function pin mask defines (these can be used in gpio_pins_val_set/clear/complement() as the second argument)
+// GPIO pin function pin mask defines (these can be used in gpios_set/clear/complement() as the second argument)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_MASK_FUNC_GPINT0	PX_D2
 #define GPIO_PIN_MASK_FUNC_GPINT1	PX_D3
@@ -579,7 +579,7 @@ typedef enum
 #define GPIO_PIN_MASK_FUNC_AIN13	PX_D5
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// GPIO pin sbit defines (these can be used in gpio_pin_val_sbit_set/clear/complement())
+// GPIO pin sbit defines (these can be used in gpio_sbit_set/clear/complement())
 /////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_PIN_SBIT_FUNC_GPINT0	P1_SB_D2
 #define GPIO_PIN_SBIT_FUNC_GPINT1	P1_SB_D3
@@ -624,38 +624,37 @@ typedef enum
 #define GPIO_PIN_SBIT_FUNC_AIN13	P1_SB_D5
 #endif
 
-
 /////////////////////////////////////////////////////////////
 // Pin direction macros
 /////////////////////////////////////////////////////////////
-#define gpio_pins_dir_input(gpio_reg, pins_mask)	reg_bits_set(gpio_reg, pins_mask)				//Configures pins whose bits are set in pins_mask on GPIO port gpio_reg to input(s)
-#define gpio_pins_dir_output(gpio_reg, pins_mask)	reg_bits_clear(gpio_reg, pins_mask)				//Configures pins whose bits are set in pins_mask on GPIO port gpio_reg to output(s)
+#define gpios_dir_input(gpio_reg, pins_mask)	reg_bits_set(gpio_reg, pins_mask)				//Configures pins whose bits are set in pins_mask on GPIO port gpio_reg to input(s)
+#define gpios_dir_output(gpio_reg, pins_mask)	reg_bits_clear(gpio_reg, pins_mask)				//Configures pins whose bits are set in pins_mask on GPIO port gpio_reg to output(s)
 
 //////////////////////////////////////////////////////////////////
 // Pin value macros for GPIO SBITs (can only modify one GPIO pin)
 //////////////////////////////////////////////////////////////////
-#define gpio_pin_val_sbit_set(sbit_pin_set)					sbit_set(sbit_pin_set)					//Sets the output value of a single SBIT pin (i.e., P0_SB_D0)
-#define gpio_pin_val_sbit_clear(sbit_pin_clear)				sbit_clear(sbit_pin_clear)				//Clears the output value of a single SBIT pin (i.e., P0_SB_D0)
-#define gpio_pin_val_sbit_complement(sbit_pin_complement)	sbit_complement(sbit_pin_complement)	//Complements the output value of a single SBIT pin (i.e., P0_SB_D0)
+#define gpio_sbit_set(sbit_pin_set)					sbit_set(sbit_pin_set)					//Sets the output value of a single SBIT pin (i.e., P0_SB_D0)
+#define gpio_sbit_clear(sbit_pin_clear)				sbit_clear(sbit_pin_clear)				//Clears the output value of a single SBIT pin (i.e., P0_SB_D0)
+#define gpio_sbit_complement(sbit_pin_complement)	sbit_complement(sbit_pin_complement)	//Complements the output value of a single SBIT pin (i.e., P0_SB_D0)
 
 //////////////////////////////////////////////////////////////////////////////
 // Pin value macros for GPIO registers (can modify all GPIOs in the register)
 //////////////////////////////////////////////////////////////////////////////
-#define gpio_pins_val_set(gpio_reg, pins_mask)			reg_bits_set(gpio_reg, pins_mask)			//Sets the output values of pins whose bits are set in pins_mask on GPIO port gpio_reg
-#define gpio_pins_val_clear(gpio_reg, pins_mask)		reg_bits_clear(gpio_reg, pins_mask)			//Clears the output values of pins whose bits are set in pins_mask on GPIO port gpio_reg
-#define gpio_pins_val_complement(gpio_reg, pins_mask)	reg_bits_complement(gpio_reg, pins_mask)	//Complements the output values of pins whose bits are set in pins_mask on GPIO port gpio_reg
+#define gpios_set(gpio_reg, pins_mask)			reg_bits_set(gpio_reg, pins_mask)			//Sets the output values of pins whose bits are set in pins_mask on GPIO port gpio_reg
+#define gpios_clear(gpio_reg, pins_mask)		reg_bits_clear(gpio_reg, pins_mask)			//Clears the output values of pins whose bits are set in pins_mask on GPIO port gpio_reg
+#define gpios_complement(gpio_reg, pins_mask)	reg_bits_complement(gpio_reg, pins_mask)	//Complements the output values of pins whose bits are set in pins_mask on GPIO port gpio_reg
 
 
 ///////////////////////////////////////////
 // Function prototypes
 ///////////////////////////////////////////
-void gpio_pin_configure(gpio_pin_id_t gpio_pin_id, uint8_t gpio_pin_config_options);
-void gpio_pin_val_set(gpio_pin_id_t gpio_pin_id);
-void gpio_pin_val_clear(gpio_pin_id_t gpio_pin_id);
-void gpio_pin_val_write(gpio_pin_id_t gpio_pin_id, bool value);
-bool gpio_pin_val_read(gpio_pin_id_t gpio_pin_id);
-void gpio_pin_val_complement(gpio_pin_id_t gpio_pin_id);
-void gpio_pin_dir_input(gpio_pin_id_t gpio_pin_id, uint8_t gpio_pin_config_options);
-void gpio_pin_dir_output(gpio_pin_id_t gpio_pin_id, uint8_t gpio_pin_config_options);
+void gpio_configure(gpio_id_t gpio_id, uint8_t gpio_config_options);
+//void gpio_dir_input(gpio_id_t gpio_id,  uint8_t gpio_config_options);
+//void gpio_dir_output(gpio_id_t gpio_id,  uint8_t gpio_config_options);
+void gpio_set(gpio_id_t gpio_id);
+void gpio_clear(gpio_id_t gpio_id);
+void gpio_write(gpio_id_t gpio_id, bool value);
+bool gpio_read(gpio_id_t gpio_id);
+void gpio_complement(gpio_id_t gpio_id);
 
 #endif /*GPIO_H_*/

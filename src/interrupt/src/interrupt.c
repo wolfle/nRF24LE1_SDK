@@ -16,9 +16,10 @@ void irq_config_ifp(irq_ifp_input_e irq_ifp_input, bool enable, bool edge)
 }
 
 void irq_set_priority(irq_priority_group_e group, irq_priority_e level){
-	if(level & 0x1)	IP0 |= (1 << group);
-	else IP0 &= ~(1 << group);
+	uint8_t m=(1 << group);
+	if(level & 0x1)	IP0 |= m;
+	else IP0 &= ~m;
 
-	if(level & 0x2)	IP1 |= (1 << group);
-	else IP1 &= ~(1 << group);
+	if(level & 0x2)	IP1 |= m;
+	else IP1 &= ~m;
 }

@@ -18,6 +18,7 @@
 #define _TIMER_H_
 
 #include "reg24le1.h"
+#include "pt.h"
 
 #define TIMER1_MODE_0_13_BIT_CTR_TMR			(0x00)	//Configure timer 1 in mode 0 (13-bit counter/timer)
 #define TIMER1_MODE_1_16_BIT_CTR_TMR			(0x01 << TMOD_MODE1_SHIFT)	//Configure timer 1 in mode 1 (16-bit counter/timer)
@@ -30,20 +31,20 @@
 #define TIMER1_GATE_ALWAYS_RUN_TIMER			(0)							//Configure timer 1 to always run the timer
 #define TIMER1_GATE_RUN_TIMER_WHEN_IFP_HIGH	(TMOD_GATE1)				//Configure timer 1 to run when IFP is high
 
-typedef void (*timer_callback_t)(void);
+//typedef void (*timer_callback_t)(void) __reentrant;
 
 ////////////////////////////
 // Function prototypes
 ////////////////////////////
-void timer0_init(uint8_t timer0_config_options, uint16_t t0_val);
+//void timer0_init(uint8_t timer0_config_options, uint16_t t0_val);
 
-void timer1_init(uint8_t timer1_config_options, uint16_t t1_val,timer_callback_t callback);
+void timer1_init(uint8_t timer1_config_options,uint16_t t1_val) __reentrant;
 
-void timer2_init(uint16_t timer2_config_options, uint16_t auto_reload_or_compare_time,timer_callback_t callback);
-uint32_t timer_us_to_c(uint32_t us);
-uint32_t timer_c_to_us(uint16_t c);
+void timer2_init(uint16_t timer2_config_options,uint16_t auto_reload_or_compare_time) __reentrant;
+//uint32_t timer_us_to_c(uint32_t us);
+//uint32_t timer_c_to_us(uint16_t c);
 
-void rtc2_init(uint8_t rtc2_config_options, uint16_t compare_value,timer_callback_t callback);
+void rtc2_init(uint8_t rtc2_config_options, uint16_t compare_value) __reentrant;
 static inline void rtc2_set_compare(uint16_t compare_value)
 {
 	RTC2CMP0 = (uint8_t)compare_value;
@@ -51,10 +52,11 @@ static inline void rtc2_set_compare(uint16_t compare_value)
 }
 
 void dms_init(void);
-uint16_t get_dms(void);
+//uint16_t get_dms(void);
 
-char timer_once(uint32_t us, timer_callback_t callback);
-char timer_repeat(uint32_t us, timer_callback_t callback);
-PT(delay_dms,uint16_t sms,uint16_t * j0, uint16_t *j1);
+//char timer_once(uint32_t us, timer_callback_t callback);
+//char timer_repeat(uint32_t us, timer_callback_t callback);
+PT(delay_dms, uint16_t sms,__pdata uint16_t * j0, __pdata uint16_t * j1); //1
+void delay_us(uint8_t microseconds);
 
 #endif /* _TIMER_H_ */

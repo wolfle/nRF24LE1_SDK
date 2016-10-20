@@ -108,9 +108,8 @@
 #define rtc2_is_running()	(RTC2CON & RTC2CON_ENABLE)		//True if RTC2 is running, false otherwise
 #define rtc2_sfr_capture()	reg_bits_set(RTC2CON, RTC2CON_SFR_CAPTURE) 		//Captures RTC2 registers
 
-static 	timer_callback_t cb1,cb2,rtcb;
 static  volatile  uint16_t dms;  //*0.1ms, used as jiffers
-
+/*
 uint32_t timer_c_to_us(uint16_t c)
 {
 	//Calculates the desired timer overflow period from the CRC value
@@ -132,8 +131,8 @@ uint32_t timer_us_to_c(uint32_t us)
 	//Round the floating point number to the nearest integer by adding 0.5, then return that integer
 	return us * get_cclk_freq_in_mhz() / 12 ;
 }
-
-void timer0_init(uint8_t timer0_config_options, uint16_t t0_val)
+*/
+static void timer0_init(uint8_t timer0_config_options, uint16_t t0_val) __reentrant
 {
 	timer0_stop();
 	irq_t0_disable();
@@ -151,7 +150,7 @@ void timer0_init(uint8_t timer0_config_options, uint16_t t0_val)
 	timer0_run();
 }
 
-void timer1_init(uint8_t timer1_config_options, uint16_t t1_val, timer_callback_t callback)
+void timer1_init(uint8_t timer1_config_options, uint16_t t1_val) __reentrant
 {
 	timer1_stop();
 	irq_t1_disable();
@@ -165,7 +164,6 @@ void timer1_init(uint8_t timer1_config_options, uint16_t t1_val, timer_callback_
 
 	//Set up TMOD register from timer1_config_options
 	TMOD = (TMOD & ~TIMER1_TMOD_MASK) | (timer1_config_options & TIMER1_TMOD_MASK);
-	cb1=callback;
 	irq_t1_enable();
 	timer1_run();
 }
@@ -175,7 +173,7 @@ void timer1_init(uint8_t timer1_config_options, uint16_t t1_val, timer_callback_
 //					this is the auto-reload value used to init CRC ***and*** T2
 //      if not using auto-reload, but instead using compare with CCEN,
 //					this is the compare value used to init CRC (T2 is init to 0)
-void timer2_init(uint16_t timer2_config_options, uint16_t auto_reload_or_compare, timer_callback_t callback)
+void timer2_init(uint16_t timer2_config_options, uint16_t auto_reload_or_compare) __reentrant
 {
 	timer2_stop();
 	irq_t2_disable();
@@ -188,11 +186,10 @@ void timer2_init(uint16_t timer2_config_options, uint16_t auto_reload_or_compare
 	//Set up CCEN and T2CON registers from timer2_config_options
 	CCEN = ((uint8_t)(timer2_config_options >> TIMER2_CCEN_OFFSET_SHIFT)) & TIMER2_CCEN_WRITE_MASK;
 	T2CON = (T2CON & ~TIMER2_T2CON_WRITE_MASK) | (timer2_config_options&TIMER2_T2CON_WRITE_MASK);
-	cb2=callback;
 	irq_t2_enable();
 }
 
-void rtc2_init(uint8_t rtc2_config_options, uint16_t compare_value, timer_callback_t callback)
+void rtc2_init(uint8_t rtc2_config_options, uint16_t compare_value) __reentrant
 {
 	rtc2_stop();
 	irq_rtc2_disable();
@@ -201,25 +198,22 @@ void rtc2_init(uint8_t rtc2_config_options, uint16_t compare_value, timer_callba
 
 	//Set up RTC2CON register from rtc2_config_options
 	RTC2CON = (RTC2CON & ~RTC2_RTC2CON_MASK) | (rtc2_config_options & RTC2_RTC2CON_MASK);
-	rtcb=callback;
 	irq_rtc2_enable();
 	rtc2_run();
 }
 
 void dms_init(void){
 	dms=0;
-	timer0_init(TIMER0_MODE_2_8_BIT_AUTO_RLD_TMR,0xFF-133+1);
+	timer0_init(TIMER0_MODE_2_8_BIT_AUTO_RLD_TMR,0xFF-133+1);  //16/12*100=133.3
 }
 
-uint16_t get_dms(void){
-	return dms;
-}
+//uint16_t get_dms(void){	return dms;}
 
 irq_isr_t0(){
 	++dms;
 //	if(!TMOD&TIMER0_MODE_2_8_BIT_AUTO_RLD_TMR)timer0_stop();
 }
-
+/*
 irq_isr_t1(){
 	if(cb1)cb1();
 	if(!TMOD&TIMER1_MODE_2_8_BIT_AUTO_RLD_TMR)timer1_stop();	
@@ -234,44 +228,22 @@ irq_isr_rtc2(){
 	if(rtcb)rtcb();
 }
 
-char timer_once(uint32_t us, timer_callback_t callback)
-{
-	uint32_t c=timer_us_to_c(us);
-	if(c>0x1FFFF)return -EINVAL;
-	if(c>0xFFFF){
-		if(cb2)return -EBUSY;
-		timer2_init(TIMER2_MODE_TIMER|TIMER2_PRESCALER_DIV_24,c>>1,callback);
-	}else{
-		if(!cb1)timer1_init(TIMER1_MODE_1_16_BIT_CTR_TMR,0xFFFF-c+1,callback);
-		else if(!cb2)timer2_init(TIMER2_MODE_TIMER|TIMER2_PRESCALER_DIV_12,c,callback);		
-		else return -EBUSY;
-	}
-	return SUCCESS;
-}
 
-char timer_repeat(uint32_t us, timer_callback_t callback)
-{
-	uint32_t c=timer_us_to_c(us);
-	if(c>0x1FFFF)return -EINVAL;
-	if(c>0xFFFF){
-		if(cb2)return -EBUSY;
-		timer2_init(TIMER2_MODE_TIMER|TIMER2_PRESCALER_DIV_24|TIMER2_RELOAD_ON_OVERFLOW,0xFFFF-(c>>1)+1,callback);
-	}else if(c<=0xFF){
-		if(!cb1)timer1_init(TIMER1_MODE_2_8_BIT_AUTO_RLD_TMR,0xFF-c+1,callback);
-		else if(!cb2)timer2_init(TIMER2_MODE_TIMER|TIMER2_RELOAD_ON_OVERFLOW,0xFF-c+1,callback);
-		else return -EBUSY;
-	}else{
-		if(cb2)return -EBUSY;
-		timer2_init(TIMER2_MODE_TIMER|TIMER2_RELOAD_ON_OVERFLOW,0xFFFF-c+1,callback);
-	}		
-	return SUCCESS;
-}
-
-PT(delay_dms,uint16_t sms,uint16_t * j0, uint16_t *j1){
-	PT_B()
+*/
+PT(delay_dms, uint16_t sms,__pdata uint16_t *  j0, __pdata uint16_t * j1){
+	PT_B
 	*j0=dms;
 	*j1=*j0+sms;
 	if(*j1<*j0)PT_WAIT(dms<*j0);
 	PT_WAIT(dms>*j1);
-	PT_E(outdelay)
+	PT_E
+}
+
+void delay_us(uint8_t microseconds)
+{
+	while(--microseconds)
+	{
+		nop();
+		nop();
+	}
 }

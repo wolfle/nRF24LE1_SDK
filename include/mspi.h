@@ -61,15 +61,6 @@
 ///////////////////////////////////////////
 #define mspi_enable()				(SPIMCON0 |= SPIMCON0_ENABLE)									//Enable MSPI
 #define mspi_disable()				(SPIMCON0 &= ~SPIMCON0_ENABLE)									//Disable MSPI
-#define	mspi_send(data_to_send)		(SPIMDAT = (data_to_send))										//Sends data_to_send over MSPI
-#define	mspi_get()					(SPIMDAT)														//Returns last data received over MSPI
-#define	mspi_is_rx_fifo_full()		(SPIMSTAT & SPIMSTAT_INT_RX_DATA_FULL_FLAG)		//True if RX FIFO is full, false otherwise
-#define	mspi_is_rx_data_ready()		(SPIMSTAT & SPIMSTAT_INT_RX_DATA_READY_FLAG)	//True if RX data is ready, false otherwise
-#define	mspi_is_tx_fifo_empty()		(SPIMSTAT & SPIMSTAT_INT_TX_FIFO_EMPTY_FLAG)	//True if TX FIFO is empty, false otherwise
-#define	mspi_is_tx_fifo_ready()		(SPIMSTAT & SPIMSTAT_INT_TX_FIFO_READY_FLAG)	//True if TX FIFO is ready, false otherwise
-
-#define	MSPI_SPIMCON0_MASK		0x7F	//Mask for the options used for SPIMCON0
-#define MSPI_SPIMCON1_MASK		0x0F	//Mask for the options used for SPIMCON1
 
 ///////////////////////////////////////////
 // Function prototypes
@@ -81,6 +72,6 @@ void mspi_init(uint8_t mspi_config_options);
  * sending any meaningful data to the other side. This will drive the clock and
  * let you read data back.
  */
-PT(mspi_io,uint8_t *data,uint16_t size);
+PT(mspi_io,__pdata void *data,uint16_t size);//1
 
 #endif /*MSPI_H_*/
